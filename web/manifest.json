@@ -1,0 +1,17 @@
+{
+  "name": "CalcAd",
+  "short_name": "CalcAd",
+  "description": "Mathematics calculator in English, Spanish and Finnish",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101012",
+  "theme_color": "#1c1c1e",
+  "icons": [
+    {
+      "src": "calcAd.png",
+      "sizes": "1254x1254",
+      "type": "image/png"
+    }
+  ]
+}

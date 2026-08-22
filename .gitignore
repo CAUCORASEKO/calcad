@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+build/
+dist/
+*.spec
+
+node_modules/
+
+android/.gradle/
+android/local.properties
+android/app/build/
+
+# macOS packaged artifacts
+dmg_build/
+*.dmg
+
+# Generated macOS icon assets
+assets/*.iconset/
