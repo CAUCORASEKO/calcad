@@ -1,4 +1,4 @@
-const CACHE_NAME = "calcad-v2";
+const CACHE_NAME = "calcad-phase1-probability-v3";
 
 const ASSETS = [
   "./",

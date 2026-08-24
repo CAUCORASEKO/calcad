@@ -507,6 +507,491 @@ P × 100 = ${percent.toFixed(2)} %`,
   };
 }
 
+function gcd(a, b) { while (b) [a, b] = [b, a % b]; return Math.abs(a); }
+function fraction(n, d) { const g = gcd(Math.round(n), Math.round(d)); return `${Math.round(n / g)}/${Math.round(d / g)}`; }
+
+function calculateSystem(data, lang) {
+  const v = Object.values(data).map(numberValue); const [a1,b1,c1,a2,b2,c2] = v;
+  const D = a1*b2-a2*b1, Dx = c1*b2-c2*b1, Dy = a1*c2-a2*c1;
+  const es = lang === "EN", fi = lang === "FI";
+  const words = es ? {unique:"Unique solution", none:"No solution", infinite:"Infinitely many solutions", determinant:"Determinant", xnum:"Numerator for x", ynum:"Numerator for y"} : fi ? {unique:"Yksi ratkaisu", none:"Ei ratkaisua", infinite:"Äärettömän monta ratkaisua", determinant:"Determinantti", xnum:"x:n osoittaja", ynum:"y:n osoittaja"} : {unique:"Solución única", none:"Sin solución", infinite:"Infinitas soluciones", determinant:"Determinante", xnum:"Numerador de x", ynum:"Numerador de y"};
+  const label = D ? words.unique : (Dx || Dy ? words.none : words.infinite);
+  let steps = `${a1}x + ${b1}y = ${c1}\n${a2}x + ${b2}y = ${c2}\n\n${words.determinant} D = a₁b₂ − a₂b₁ = ${D}`;
+  if (!D) { steps += `\nDx = ${Dx}, Dy = ${Dy}\n\n${label}.`; return {result: label, formula:"a₁x + b₁y = c₁\na₂x + b₂y = c₂\nD = a₁b₂ − a₂b₁", steps}; }
+  const x=Dx/D,y=Dy/D; steps += `\n${words.xnum} Dx = c₁b₂ − c₂b₁ = ${Dx}\n${words.ynum} Dy = a₁c₂ − a₂c₁ = ${Dy}\n\nx = Dx / D = ${x.toFixed(4)}\ny = Dy / D = ${y.toFixed(4)}`;
+  return {result:`${label}: x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`,formula:"Cramer's rule: x = Dx/D, y = Dy/D",steps};
+}
+
+function calculateAdvancedProbability(data, lang) {
+  const mode = data.mode;
+  const sides = Number(data.sides);
+  const sides2 =
+    mode === "one"
+      ? null
+      : Number(data.sides2);
+
+  const kind = data.kind;
+  const compare = data.compare || "equal";
+
+  const target =
+    kind === "divisible"
+      ? null
+      : Number(data.target);
+
+  if (!["one", "two", "custom"].includes(mode)) {
+    throw new Error("invalid_mode");
+  }
+
+  if (!Number.isInteger(sides) || sides < 1) {
+    throw new Error("invalid_sides");
+  }
+
+  if (
+    mode !== "one" &&
+    (!Number.isInteger(sides2) || sides2 < 1)
+  ) {
+    throw new Error("invalid_second_die");
+  }
+
+  if (
+    kind !== "divisible" &&
+    !Number.isFinite(target)
+  ) {
+    throw new Error("invalid_target");
+  }
+
+  const outcomes =
+    mode === "one"
+      ? Array.from(
+          { length: sides },
+          (_, index) => [index + 1]
+        )
+      : Array.from(
+          { length: sides * sides2 },
+          (_, index) => [
+            Math.floor(index / sides2) + 1,
+            (index % sides2) + 1,
+          ]
+        );
+
+  function compareNumber(value) {
+    switch (compare) {
+      case "greater":
+        return value > target;
+      case "less":
+        return value < target;
+      case "greaterEqual":
+        return value >= target;
+      case "lessEqual":
+        return value <= target;
+      case "equal":
+      default:
+        return value === target;
+    }
+  }
+
+  const favorable = outcomes.filter((outcome) => {
+    if (mode === "one") {
+      const value = outcome[0];
+
+      switch (kind) {
+        case "greater":
+          return value > target;
+        case "less":
+          return value < target;
+        case "greaterEqual":
+          return value >= target;
+        case "lessEqual":
+          return value <= target;
+        case "equal":
+        default:
+          return value === target;
+      }
+    }
+
+    const [a, b] = outcome;
+
+    if (kind === "atleast") {
+      return a === target || b === target;
+    }
+
+    if (kind === "divisible") {
+      return Number.isInteger(a / b);
+    }
+
+    if (kind === "product") {
+      return compareNumber(a * b);
+    }
+
+    return compareNumber(a + b);
+  });
+
+  const total = outcomes.length;
+  const favorableCount = favorable.length;
+  const probability = favorableCount / total;
+
+  const labels =
+    lang === "FI"
+      ? {
+          total: "Kaikki tulokset",
+          favorable: "Suotuisat tulokset",
+          formula:
+            "P = suotuisat tulokset / kaikki tulokset",
+        }
+      : lang === "ES"
+        ? {
+            total: "Resultados totales",
+            favorable: "Resultados favorables",
+            formula:
+              "P = resultados favorables / resultados totales",
+          }
+        : {
+            total: "Total outcomes",
+            favorable: "Favorable outcomes",
+            formula:
+              "P = favorable outcomes / total outcomes",
+          };
+
+  const favorableText =
+    favorable.length <= 36
+      ? `\n\n${favorable
+          .map((outcome) =>
+            mode === "one"
+              ? `${outcome[0]}`
+              : `(${outcome.join(", ")})`
+          )
+          .join(", ")}`
+      : "";
+
+  return {
+    result:
+      `P = ${fraction(favorableCount, total)} ` +
+      `= ${probability.toFixed(4)} ` +
+      `= ${(probability * 100).toFixed(2)} %`,
+
+    formula: labels.formula,
+
+    steps:
+      `${labels.total}: ${total}\n` +
+      `${labels.favorable}: ${favorableCount}\n` +
+      `P = ${favorableCount}/${total} ` +
+      `= ${fraction(favorableCount, total)}\n` +
+      `P = ${probability.toFixed(4)}\n` +
+      `P × 100 = ${(probability * 100).toFixed(2)} %` +
+      favorableText,
+  };
+}
+
+function calculateRightTriangle(data, lang) {
+  const o=data.opposite?numberValue(data.opposite):null, a=data.adjacent?numberValue(data.adjacent):null, h=data.hypotenuse?numberValue(data.hypotenuse):null, A=data.angle?numberValue(data.angle):null;
+  if (![o,a,h,A].some(v=>v!==null) || [o,a,h,A].some(v=>v!==null&&v<=0) || (A!==null&&A>=90)) throw new Error("invalid_input");
+  let O=o, Adj=a, H=h; if(O!==null&&Adj!==null){H=Math.hypot(O,Adj);} else if(A!==null&&Adj!==null){O=Adj*Math.tan(A*Math.PI/180);H=Math.hypot(O,Adj);} else if(A!==null&&O!==null){Adj=O/Math.tan(A*Math.PI/180);H=Math.hypot(O,Adj);} else if(A!==null&&H!==null){O=H*Math.sin(A*Math.PI/180);Adj=H*Math.cos(A*Math.PI/180);} else if(O!==null&&H!==null){Adj=Math.sqrt(H*H-O*O);} else if(Adj!==null&&H!==null){O=Math.sqrt(H*H-Adj*Adj);} else throw new Error("invalid_input");
+  const angleA=Math.atan2(O,Adj)*180/Math.PI, angleB=90-angleA;
+  const w=lang==="FI"?{o:"vastakkainen",a:"viereinen",h:"hypotenuusa",known:"Tunnetut arvot",sub:"Sijoitetaan tangenttiin tai Pythagoraan lauseeseen"}:lang==="ES"?{o:"opuesto",a:"adyacente",h:"hipotenusa",known:"Valores conocidos",sub:"Sustituimos en la tangente o en Pitágoras"}:{o:"opposite",a:"adjacent",h:"hypotenuse",known:"Known values",sub:"Substitute in tangent or Pythagoras"};
+  return {result:`${w.o} = ${O.toFixed(4)}, ${w.a} = ${Adj.toFixed(4)}, ${w.h} = ${H.toFixed(4)}\nA = ${angleA.toFixed(2)}°, B = ${angleB.toFixed(2)}°`,formula:"tan(A) = opposite / adjacent\nh² = opposite² + adjacent²",steps:`${w.known} → ${w.sub}\nh² = ${O.toFixed(4)}² + ${Adj.toFixed(4)}²\nh = ${H.toFixed(4)}\nA = arctan(${O.toFixed(4)} / ${Adj.toFixed(4)}) = ${angleA.toFixed(2)}°\nB = 90° − A = ${angleB.toFixed(2)}°`};
+}
+
+function calculateExponentialAdvanced(data) { const k=numberValue(data.k), a=numberValue(data.a); if(k<=0||a<=0||a===1) throw new Error("invalid_input"); if(data.target){const target=numberValue(data.target); if(target<=0) throw new Error("invalid_input"); const t=Math.log(target/k)/Math.log(a); return {result:`t = ${t.toFixed(4)}`,formula:"t = ln(target / k) / ln(a)",steps:`k·a^t = target\n${a}^t = ${target} / ${k}\nt = ln(${target}/${k}) / ln(${a})\nt = ${t.toFixed(4)}`};} const t=numberValue(data.t), value=k*Math.pow(a,t); return {result:`f(${t}) = ${value.toFixed(4)}`,formula:"f(t) = k · a^t",steps:`f(${t}) = ${k} · ${a}^${t}\nf(${t}) = ${value.toFixed(4)}`}; }
+
+
+
+function calculateIndexedValue(data, lang) {
+  const oldValue = numberValue(data.oldValue);
+  const oldIndex = numberValue(data.oldIndex);
+  const newIndex = numberValue(data.newIndex);
+
+  if (oldIndex === 0) throw new Error("invalid_input");
+
+  const value = oldValue * newIndex / oldIndex;
+
+  const L =
+    lang === "FI"
+      ? {
+          formula: "uusi arvo = vanha arvo × uusi indeksi / vanha indeksi",
+        }
+      : lang === "EN"
+      ? {
+          formula: "new value = old value × new index / old index",
+        }
+      : {
+          formula: "valor nuevo = valor antiguo × índice nuevo / índice antiguo",
+        };
+
+  return {
+    result: value.toFixed(2),
+    formula: L.formula,
+    steps:
+      `${oldValue} × ${newIndex} / ${oldIndex}\n` +
+      `= ${value.toFixed(2)}`,
+  };
+}
+
+
+function calculateBase100(data, lang) {
+  const values = String(data.values)
+    .split(/[;\n|]+/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map(numberValue);
+
+  if (
+    values.length < 2 ||
+    values.length > 6 ||
+    values[0] === 0
+  ) {
+    throw new Error("invalid_input");
+  }
+
+  const indexes = values.map(
+    (value) => value / values[0] * 100
+  );
+
+  const change =
+    (values[values.length - 1] / values[0] - 1) * 100;
+
+  const L =
+    lang === "FI"
+      ? {
+          base: "Perusarvo",
+          change: "Muutos perusarvosta viimeiseen",
+          formula: "indeksi = arvo / perusarvo × 100",
+        }
+      : lang === "EN"
+      ? {
+          base: "Base value",
+          change: "Change from base to final",
+          formula: "index = value / base value × 100",
+        }
+      : {
+          base: "Valor base",
+          change: "Cambio desde la base hasta el valor final",
+          formula: "índice = valor / valor base × 100",
+        };
+
+  return {
+    result: `${change.toFixed(2)} %`,
+    formula: L.formula,
+    steps:
+      `${L.base}: ${values[0].toFixed(2)} = 100\n` +
+      indexes
+        .map(
+          (index, i) =>
+            `${i + 1}: ${values[i].toFixed(2)} → ${index.toFixed(2)}`
+        )
+        .join("\n") +
+      `\n${L.change}: ${change.toFixed(2)} %`,
+  };
+}
+
+
+function calculateUnitContribution(data, lang) {
+  const quantity = numberValue(data.quantity);
+  const price = numberValue(data.price);
+  const variable = numberValue(data.variable);
+  const fixed = numberValue(data.fixed);
+
+  if (
+    quantity < 0 ||
+    price < 0 ||
+    variable < 0 ||
+    fixed < 0
+  ) {
+    throw new Error("invalid_input");
+  }
+
+  const sales = quantity * price;
+  const costs = quantity * variable;
+  const margin = sales - costs;
+  const result = margin - fixed;
+
+  const pct = (value) =>
+    sales ? value / sales * 100 : 0;
+
+  const L =
+    lang === "FI"
+      ? {
+          sales: "Myyntituotot",
+          variable: "Muuttuvat kustannukset",
+          margin: "Kate",
+          fixed: "Kiinteät kustannukset",
+          result: "Tulos",
+        }
+      : lang === "EN"
+      ? {
+          sales: "Sales revenue",
+          variable: "Variable costs",
+          margin: "Contribution margin",
+          fixed: "Fixed costs",
+          result: "Result",
+        }
+      : {
+          sales: "Ingresos por ventas",
+          variable: "Costes variables",
+          margin: "Margen de contribución",
+          fixed: "Costes fijos",
+          result: "Resultado",
+        };
+
+  return {
+    result: `${L.result}: ${result.toFixed(2)}`,
+    formula:
+      "sales = quantity × price\n" +
+      "variable costs = quantity × variable cost\n" +
+      "margin = sales − variable costs\n" +
+      "result = margin − fixed costs",
+    steps:
+      `${L.sales} = ${quantity} × ${price} = ${sales.toFixed(2)}\n` +
+      `${L.variable} = ${quantity} × ${variable} = ${costs.toFixed(2)}\n` +
+      `${L.margin} = ${margin.toFixed(2)} (${pct(margin).toFixed(2)} %)\n` +
+      `${L.fixed} = ${fixed.toFixed(2)} (${pct(fixed).toFixed(2)} %)\n` +
+      `${L.result} = ${result.toFixed(2)}`,
+  };
+}
+
+
+function calculateVat(data, lang) {
+  const amount = numberValue(data.amount);
+  const rate = numberValue(data.rate);
+
+  if (amount < 0 || rate < 0) {
+    throw new Error("invalid_input");
+  }
+
+  const factor = 1 + rate / 100;
+
+  const net =
+    data.mode === "gross"
+      ? amount / factor
+      : amount;
+
+  const gross =
+    data.mode === "gross"
+      ? amount
+      : amount * factor;
+
+  const vat = gross - net;
+
+  const L =
+    lang === "FI"
+      ? { net: "Netto", vat: "ALV", gross: "Brutto" }
+      : lang === "EN"
+      ? { net: "Net", vat: "VAT", gross: "Gross" }
+      : { net: "Neto", vat: "IVA", gross: "Bruto" };
+
+  return {
+    result:
+      `${L.net} = ${net.toFixed(2)}, ` +
+      `${L.vat} = ${vat.toFixed(2)}, ` +
+      `${L.gross} = ${gross.toFixed(2)}`,
+
+    formula:
+      data.mode === "gross"
+        ? "net = gross / (1 + rate)"
+        : "gross = net × (1 + rate)\nVAT = gross − net",
+
+    steps:
+      `${L.net}: ${net.toFixed(2)}\n` +
+      `${L.vat}: ${vat.toFixed(2)}\n` +
+      `${L.gross}: ${gross.toFixed(2)}`,
+  };
+}
+
+
+function calculateTaxedGrowth(data, lang) {
+  const start = numberValue(data.start);
+  const rate = numberValue(data.rate) / 100;
+  const taxRate = numberValue(data.tax) / 100;
+  const years = numberValue(data.years);
+
+  if (
+    start < 0 ||
+    rate < 0 ||
+    taxRate < 0 ||
+    years < 1 ||
+    years > 100 ||
+    !Number.isInteger(years)
+  ) {
+    throw new Error("invalid_input");
+  }
+
+  let capital = start;
+  const rows = [];
+
+  for (let year = 1; year <= years; year += 1) {
+    const opening = capital;
+    const interest = opening * rate;
+    const tax = interest * taxRate;
+    const netInterest = interest - tax;
+
+    capital = opening + netInterest;
+
+    rows.push({
+      year,
+      opening,
+      interest,
+      tax,
+      netInterest,
+      closing: capital,
+    });
+  }
+
+  const L =
+    lang === "FI"
+      ? {
+          final: "Loppupääoma",
+          year: "Vuosi",
+          opening: "Alkupääoma",
+          interest: "Korko",
+          tax: "Vero",
+          closing: "Loppupääoma",
+        }
+      : lang === "EN"
+      ? {
+          final: "Final capital",
+          year: "Year",
+          opening: "Opening capital",
+          interest: "Interest",
+          tax: "Tax",
+          closing: "Closing capital",
+        }
+      : {
+          final: "Capital final",
+          year: "Año",
+          opening: "Capital inicial",
+          interest: "Interés",
+          tax: "Impuesto",
+          closing: "Capital final",
+        };
+
+  return {
+    result: `${L.final}: ${capital.toFixed(4)}`,
+    formula:
+      "interest = capital × annual rate\n" +
+      "tax = interest × tax rate\n" +
+      "new capital = capital + interest − tax",
+
+    steps: rows
+      .map(
+        (row) =>
+          `${L.year} ${row.year}\n` +
+          `${L.opening}: ${row.opening.toFixed(4)}\n` +
+          `${L.interest}: ${row.interest.toFixed(4)}\n` +
+          `${L.tax}: ${row.tax.toFixed(4)}\n` +
+          `${L.closing}: ${row.closing.toFixed(4)}`
+      )
+      .join("\n\n"),
+
+    rows,
+  };
+}
+
+function calculateLoanSchedule(data) {
+  const K=numberValue(data.capital), n=numberValue(data.months), annual=numberValue(data.annualInterest), selected=numberValue(data.installment||1); if(K<0||n<1||selected<1||selected>n) throw new Error("invalid_input"); const i=annual/1200, amort=K/n, rows=[]; let balance=K,totalInterest=0;
+  for(let number=1;number<=n;number++){const opening=balance, interest=opening*i, payment=amort+interest; balance=Math.max(0,opening-amort); totalInterest+=interest; rows.push({number,opening,amortization:amort,interest,payment,remaining:balance});}
+  return {rows,selected:rows[selected-1],first:rows[0],second:rows[Math.min(1,n-1)],last:rows[n-1],totalInterest,totalPaid:K+totalInterest};
+}
+function calculateAnnuityDetails(data) { const K=numberValue(data.capital), n=numberValue(data.months), annual=numberValue(data.annualInterest), selected=numberValue(data.installment||1); if(K<0||n<1||selected<1||selected>n) throw new Error("invalid_input"); const i=annual/1200, payment=i===0?K/n:K*i/(1-Math.pow(1+i,-n)), rows=[]; let balance=K; for(let number=1;number<=n;number++){const opening=balance, interest=opening*i, principal=Math.min(payment-interest,opening); balance=Math.max(0,opening-principal); rows.push({number,opening,interest,principal,payment:principal+interest,remaining:balance});} const totalPaid=rows.reduce((s,r)=>s+r.payment,0); return {payment,rows,first:rows[0],selected:rows[selected-1],last:rows[n-1],totalPaid,totalInterest:totalPaid-K}; }
+
 
 function calculateLinearEquation(data, lang) {
   const a = numberValue(data.a);

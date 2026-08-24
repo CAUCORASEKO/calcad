@@ -14,7 +14,7 @@ const TRANSLATIONS = {
     cpiFinal: "CPI2 / Final index", years: "Number of years", favorableCases: "Favorable cases",
     totalCases: "Total cases", linearEquation: "Linear Equation", quadraticEquation: "Quadratic Equation",
     opposite: "Opposite Side", adjacent: "Adjacent Side", initialValue: "Initial value k",
-    factor: "Factor a", time: "Time t",
+    factor: "Factor a", time: "Time t", systems: "Systems of equations", advanced: "Advanced", simpleMode: "Favorable / total", dieOne: "One die", diceTwo: "Two dice", customDice: "Custom dice", probabilityKind: "Question", target: "Target", sideCount: "Sides", secondSideCount: "Second die sides", comparison: "Comparison", equal: "Equal to", greater: "Greater than", less: "Less than", greaterEqual: "Greater than or equal to", lessEqual: "Less than or equal to", atLeast: "At least", divisible: "Divisible / integer quotient", value: "Value", sum: "Sum", product: "Product", atLeastOne: "At least one die equals", totalOutcomes: "Total outcomes", favorableOutcomes: "Favorable outcomes", favorablePairs: "Favorable pairs", unique: "Unique solution", none: "No solution", infinite: "Infinitely many solutions", targetValue: "Target value", solveValue: "Evaluate f(t)", solveTime: "Solve for t", hypotenuse: "Hypotenuse", angle: "Angle (degrees)", slope: "Slope / rise:run", quotient: "Integer quotient",
   },
   ES: {
     appTitle: "CalcAd",
@@ -68,7 +68,7 @@ const TRANSLATIONS = {
 
     initialValue: "Valor inicial k",
     factor: "Factor a",
-    time: "Tiempo t",
+    time: "Tiempo t", systems: "Sistemas de ecuaciones", advanced: "Avanzada", simpleMode: "Favorables / totales", dieOne: "Un dado", diceTwo: "Dos dados", customDice: "Dados personalizados", probabilityKind: "Pregunta", target: "Objetivo", sideCount: "Caras", secondSideCount: "Caras del segundo dado", comparison: "Comparación", equal: "Igual a", greater: "Mayor que", less: "Menor que", greaterEqual: "Mayor o igual que", lessEqual: "Menor o igual que", atLeast: "Al menos", divisible: "Divisible / cociente entero", value: "Valor", sum: "Suma", product: "Producto", atLeastOne: "Al menos un dado es igual a", totalOutcomes: "Resultados totales", favorableOutcomes: "Resultados favorables", favorablePairs: "Parejas favorables", unique: "Solución única", none: "Sin solución", infinite: "Infinitas soluciones", targetValue: "Valor objetivo", solveValue: "Evaluar t", solveTime: "Despejar t", hypotenuse: "Hipotenusa", angle: "Ángulo (grados)", slope: "Pendiente / subida:recorrido", quotient: "Cociente entero",
   },
 
   FI: {
@@ -123,10 +123,33 @@ const TRANSLATIONS = {
 
     initialValue: "Alkuarvo k",
     factor: "Kerroin a",
-    time: "Aika t",
+    time: "Aika t", systems: "Yhtälöparit", advanced: "Edistynyt", simpleMode: "Suotuisat / kaikki", dieOne: "Yksi noppa", diceTwo: "Kaksi noppaa", customDice: "Omat nopat", probabilityKind: "Kysymys", target: "Tavoite", sideCount: "Sivut", secondSideCount: "Toisen nopan sivut", comparison: "Vertailu", equal: "Yhtä kuin", greater: "Suurempi kuin", less: "Pienempi kuin", greaterEqual: "Suurempi tai yhtä suuri kuin", lessEqual: "Pienempi tai yhtä suuri kuin", atLeast: "Vähintään", divisible: "Jaollisuus / kokonaislukusuhde", value: "Arvo", sum: "Summa", product: "Tulo", atLeastOne: "Vähintään yksi noppa on", totalOutcomes: "Kaikki tulokset", favorableOutcomes: "Suotuisat tulokset", favorablePairs: "Suotuisat parit", unique: "Yksi ratkaisu", none: "Ei ratkaisua", infinite: "Äärettömän monta ratkaisua", targetValue: "Tavoitearvo", solveValue: "Laske f(t)", solveTime: "Ratkaise t", hypotenuse: "Hypotenuusa", angle: "Kulma (astetta)", slope: "Nousu:vaakamatka", quotient: "Kokonaislukusuhde",
   },
 };
 
 function tr(lang, key) {
   return TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.ES[key] ?? key;
 }
+
+Object.assign(TRANSLATIONS.EN, {navVat:"VAT", indexedValue:"Indexed value", base100:"Base-100 series", unitEconomics:"Unit economics", quantity:"Quantity", price:"Selling price per unit", variableUnit:"Variable cost per unit", fixed:"Fixed costs", mode:"Mode", netToGross:"Net to gross", grossToNet:"Gross to net", amount:"Amount", rate:"VAT rate %", startCapital:"Starting capital", taxRate:"Annual tax %", growthYears:"Number of years", taxedGrowth:"Growth with tax", indexedSeries:"Values (2–6)", oldIndex:"Old index", newIndex:"New index", less:"Less than", greaterEqual:"Greater than or equal to", lessEqual:"Less than or equal to"});
+Object.assign(TRANSLATIONS.ES, {navVat:"IVA", indexedValue:"Valor indexado", base100:"Serie base 100", unitEconomics:"Economía unitaria", quantity:"Cantidad", price:"Precio de venta por unidad", variableUnit:"Coste variable por unidad", fixed:"Costes fijos", mode:"Modo", netToGross:"Neto a bruto", grossToNet:"Bruto a neto", amount:"Importe", rate:"% de IVA", startCapital:"Capital inicial", taxRate:"% de impuesto anual", growthYears:"Número de años", taxedGrowth:"Crecimiento con impuesto", indexedSeries:"Valores (2–6)", oldIndex:"Índice antiguo", newIndex:"Índice nuevo", less:"Menor que", greaterEqual:"Mayor o igual que", lessEqual:"Menor o igual que"});
+Object.assign(TRANSLATIONS.FI, {navVat:"ALV", indexedValue:"Indeksoitu arvo", base100:"Perusindeksisarja", unitEconomics:"Yksikkötalous", quantity:"Määrä", price:"Myyntihinta yksiköltä", variableUnit:"Muuttuva kustannus yksiköltä", fixed:"Kiinteät kustannukset", mode:"Tila", netToGross:"Netosta brutoksi", grossToNet:"Brutosta netoksi", amount:"Summa", rate:"ALV-prosentti", startCapital:"Alkupääoma", taxRate:"Vuosittainen vero-%", growthYears:"Vuosien määrä", taxedGrowth:"Verotettu kasvu", indexedSeries:"Arvot (2–6)", oldIndex:"Vanha indeksi", newIndex:"Uusi indeksi", less:"Pienempi kuin", greaterEqual:"Suurempi tai yhtä suuri kuin", lessEqual:"Pienempi tai yhtä suuri kuin"});
+
+
+Object.assign(TRANSLATIONS.EN, {
+  directValues: "Direct values",
+  percentageChange: "Percentage change",
+  exponentialStandard: "Exponential calculation",
+});
+
+Object.assign(TRANSLATIONS.ES, {
+  directValues: "Valores directos",
+  percentageChange: "Cambio porcentual",
+  exponentialStandard: "Cálculo exponencial",
+});
+
+Object.assign(TRANSLATIONS.FI, {
+  directValues: "Suorat arvot",
+  percentageChange: "Prosenttimuutos",
+  exponentialStandard: "Eksponenttilaskenta",
+});
