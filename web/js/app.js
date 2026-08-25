@@ -1194,15 +1194,16 @@ function renderContribution() {
     el("content").innerHTML = `
       ${tabs}
       ${formulaCard(
-        "sales = quantity × selling price\n" +
-        "variable costs = quantity × variable cost\n" +
-        "margin = sales − variable costs\n" +
-        "result = margin − fixed costs"
+        currentLang === "FI"
+          ? "Katetuotto / kpl = myyntihinta − muuttuva kustannus / kpl\nKatetuottoprosentti = katetuotto / kpl ÷ myyntihinta × 100\nKriittinen myyntimäärä = kiinteät kustannukset ÷ katetuotto / kpl"
+          : currentLang === "EN"
+          ? "Contribution margin / unit = selling price − variable cost / unit\nContribution margin % = margin / unit ÷ selling price × 100\nBreak-even quantity = fixed costs ÷ contribution margin / unit"
+          : "Margen / unidad = precio de venta − coste variable / unidad\nMargen % = margen / unidad ÷ precio de venta × 100\nCantidad de equilibrio = costes fijos ÷ margen / unidad"
       )}
 
       <div class="card input-card">
         <div class="fields">
-          ${field("unitQuantity", tr(currentLang, "quantity"))}
+          ${field("unitQuantity", tr(currentLang, "quantityOptional"))}
           ${field("unitPrice", tr(currentLang, "price"))}
           ${field("unitVariable", tr(currentLang, "variableUnit"))}
           ${field("unitFixed", tr(currentLang, "fixed"))}
@@ -1381,17 +1382,29 @@ function renderIndexes() {
   if (currentIndexTab === "base100") {
     const seriesFields = Array.from(
       { length: 6 },
-      (_, index) =>
-        field(
+      (_, index) => {
+        const label =
+          index === 0
+            ? `${tr(currentLang, "baseValue")} (${tr(currentLang, "value")} 1)`
+            : `${tr(currentLang, "value")} ${index + 1}`;
+
+        return field(
           `indexSeries${index + 1}`,
-          `${tr(currentLang, "value")} ${index + 1}`
-        )
+          label
+        );
+      }
     ).join("");
 
     el("content").innerHTML = `
       ${tabs}
 
-      ${formulaCard("index = value / base value × 100")}
+      ${formulaCard(
+        currentLang === "FI"
+          ? "indeksi = arvo / perusarvo × 100"
+          : currentLang === "EN"
+          ? "index = value / base value × 100"
+          : "índice = valor / valor base × 100"
+      )}
 
       <div class="card input-card">
         <div class="fields">
@@ -1826,7 +1839,63 @@ let probTab="simple";
 function renderEquations(){el("moduleTitle").textContent=tr(currentLang,"navEquations");el("content").innerHTML=`<div class="tabs"><button class="tab-button ${currentEquationTab==='linear'?"active":""}" onclick="currentEquationTab='linear';renderEquations()">${tr(currentLang,"linearEquation")}</button><button class="tab-button ${currentEquationTab==='quadratic'?"active":""}" onclick="currentEquationTab='quadratic';renderEquations()">${tr(currentLang,"quadraticEquation")}</button><button class="tab-button ${currentEquationTab==='system'?"active":""}" onclick="currentEquationTab='system';renderEquations()">${tr(currentLang,"systems")}</button></div><div id="equationTabContent"></div>`; if(currentEquationTab==='system'){el("equationTabContent").innerHTML=`${formulaCard("a₁x + b₁y = c₁\na₂x + b₂y = c₂") }<div class="card input-card"><div class="fields">${field("sysA1",tr(currentLang,"systemA1"),"",true)}${field("sysB1",tr(currentLang,"systemB1"),"",true)}${field("sysC1",tr(currentLang,"systemC1"),"",true)}${field("sysA2",tr(currentLang,"systemA2"),"",true)}${field("sysB2",tr(currentLang,"systemB2"),"",true)}${field("sysC2",tr(currentLang,"systemC2"),"",true)}</div>${actionButtons("runSystem()","exampleSystem()","clearSystem()")}</div>${resultArea("system")}`;}else renderEquationTabContent();}
 function runSystem(){try{setCalculationOutput("system",calculateSystem({a1:el("sysA1").value,b1:el("sysB1").value,c1:el("sysC1").value,a2:el("sysA2").value,b2:el("sysB2").value,c2:el("sysC2").value},currentLang));}catch{setError("system");}} function exampleSystem(){["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"].forEach((id,i)=>el(id).value=[2,1,5,1,-1,1][i]);runSystem();} function clearSystem(){clearFields(["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"],"system");}
 
-function renderTrigonometry(){el("moduleTitle").textContent=tr(currentLang,"navTrigonometry");el("content").innerHTML=`${formulaCard("tan(A) = opposite / adjacent\nh² = opposite² + adjacent²") }<div class="card input-card"><div class="fields">${field("opposite",tr(currentLang,"opposite"))}${field("adjacent",tr(currentLang,"adjacent"))}${field("hypotenuse",tr(currentLang,"hypotenuse"))}${field("angle",tr(currentLang,"angle"))}</div>${actionButtons("runRightTriangle()","exampleTrigonometry()","clearRightTriangle()")}</div>${resultArea("trigonometry")}`;} function runRightTriangle(){try{setCalculationOutput("trigonometry",calculateRightTriangle({opposite:el("opposite").value,adjacent:el("adjacent").value,hypotenuse:el("hypotenuse").value,angle:el("angle").value},currentLang));}catch{setError("trigonometry");}} function clearRightTriangle(){clearFields(["opposite","adjacent","hypotenuse","angle"],"trigonometry");}
+function renderTrigonometry() {
+  el("moduleTitle").textContent = tr(currentLang, "navTrigonometry");
+
+  const formula =
+    currentLang === "FI"
+      ? "tan(A) = vastakkainen kateetti / viereinen kateetti\nh² = vastakkainen² + viereinen²"
+      : currentLang === "EN"
+      ? "tan(A) = opposite / adjacent\nh² = opposite² + adjacent²"
+      : "tan(A) = cateto opuesto / cateto adyacente\nh² = opuesto² + adyacente²";
+
+  el("content").innerHTML = `
+    ${formulaCard(formula)}
+
+    <div class="card input-card">
+      <div class="fields">
+        ${field("opposite", tr(currentLang, "opposite"))}
+        ${field("adjacent", tr(currentLang, "adjacent"))}
+        ${field("hypotenuse", tr(currentLang, "hypotenuse"))}
+        ${field("angle", tr(currentLang, "angle"))}
+      </div>
+
+      ${actionButtons(
+        "runRightTriangle()",
+        "exampleTrigonometry()",
+        "clearRightTriangle()"
+      )}
+    </div>
+
+    ${resultArea("trigonometry")}
+  `;
+}
+
+function runRightTriangle() {
+  try {
+    setCalculationOutput(
+      "trigonometry",
+      calculateRightTriangle(
+        {
+          opposite: el("opposite").value,
+          adjacent: el("adjacent").value,
+          hypotenuse: el("hypotenuse").value,
+          angle: el("angle").value,
+        },
+        currentLang
+      )
+    );
+  } catch {
+    setError("trigonometry");
+  }
+}
+
+function clearRightTriangle() {
+  clearFields(
+    ["opposite", "adjacent", "hypotenuse", "angle"],
+    "trigonometry"
+  );
+}
 
 
 
@@ -1856,9 +1925,11 @@ function renderExponential() {
       ${tabs}
 
       ${formulaCard(
-        "interest = capital × annual rate\n" +
-        "tax = interest × tax rate\n" +
-        "new capital = capital + interest − tax"
+        currentLang === "FI"
+          ? "korko = pääoma × vuosikorko\nvero = korko × veroprosentti\nnettokorko = korko − vero\nuusi pääoma = pääoma + nettokorko"
+          : currentLang === "EN"
+          ? "interest = capital × annual rate\ntax = interest × tax rate\nnet interest = interest − tax\nnew capital = capital + net interest"
+          : "interés = capital × tasa anual\nimpuesto = interés × tasa de impuesto\ninterés neto = interés − impuesto\nnuevo capital = capital + interés neto"
       )}
 
       <div class="card input-card">
@@ -1932,8 +2003,8 @@ function runTaxedGrowth() {
 }
 
 function exampleTaxedGrowth() {
-  el("growthStart").value = "1";
-  el("growthRate").value = "0,8";
+  el("growthStart").value = "10000";
+  el("growthRate").value = "4";
   el("growthTax").value = "30";
   el("growthYears").value = "5";
   runTaxedGrowth();
@@ -2064,7 +2135,7 @@ function renderProbability() {
     <div class="card input-card">
       <div class="fields">
         <div class="field">
-          <label for="probMode">${modeLabel}</label>
+          <label for="probMode">${tr(currentLang, "diceMode")}</label>
           <select id="probMode" onchange="handleProbabilityModeChange()">
             <option value="one">${tr(currentLang, "dieOne")}</option>
             <option value="two">${tr(currentLang, "diceTwo")}</option>
