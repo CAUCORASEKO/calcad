@@ -345,19 +345,19 @@ function runConstantLoan() {
       seen.add(row.number);
       uniqueRows.push(
         `${label} #${row.number}\n` +
-        `${L.opening}: ${row.opening.toFixed(2)} €\n` +
-        `${L.amort}: ${row.amortization.toFixed(2)} €\n` +
-        `${L.interest}: ${row.interest.toFixed(2)} €\n` +
-        `${L.payment}: ${row.payment.toFixed(2)} €\n` +
-        `${L.remaining}: ${row.remaining.toFixed(2)} €`
+        `${L.opening}: ${formatMoney(row.opening)} €\n` +
+        `${L.amort}: ${formatMoney(row.amortization)} €\n` +
+        `${L.interest}: ${formatMoney(row.interest)} €\n` +
+        `${L.payment}: ${formatMoney(row.payment)} €\n` +
+        `${L.remaining}: ${formatMoney(row.remaining)} €`
       );
     }
 
     setCalculationOutput("constantLoan", {
-      result: `${L.monthly}: ${monthly.toFixed(2)} €`,
+      result: `${L.monthly}: ${formatMoney(monthly)} €`,
       steps:
-        `${L.totalInterest}: ${details.totalInterest.toFixed(2)} €\n` +
-        `${L.totalPaid}: ${details.totalPaid.toFixed(2)} €\n\n` +
+        `${L.totalInterest}: ${formatMoney(details.totalInterest)} €\n` +
+        `${L.totalPaid}: ${formatMoney(details.totalPaid)} €\n\n` +
         uniqueRows.join("\n\n"),
     });
   } catch {
@@ -429,16 +429,16 @@ function runAnnuityLoan() {
     const row = details.selected;
 
     setCalculationOutput("annuityLoan", {
-      result: `${L.payment}: ${details.payment.toFixed(2)} €`,
+      result: `${L.payment}: ${formatMoney(details.payment)} €`,
       steps:
-        `${L.totalPaid}: ${details.totalPaid.toFixed(2)} €\n` +
-        `${L.totalInterest}: ${details.totalInterest.toFixed(2)} €\n\n` +
+        `${L.totalPaid}: ${formatMoney(details.totalPaid)} €\n` +
+        `${L.totalInterest}: ${formatMoney(details.totalInterest)} €\n\n` +
         `${L.selected} #${row.number}\n` +
-        `${L.opening}: ${row.opening.toFixed(2)} €\n` +
-        `${L.interest}: ${row.interest.toFixed(2)} €\n` +
-        `${L.principal}: ${row.principal.toFixed(2)} €\n` +
-        `${L.payment}: ${row.payment.toFixed(2)} €\n` +
-        `${L.remaining}: ${row.remaining.toFixed(2)} €`,
+        `${L.opening}: ${formatMoney(row.opening)} €\n` +
+        `${L.interest}: ${formatMoney(row.interest)} €\n` +
+        `${L.principal}: ${formatMoney(row.principal)} €\n` +
+        `${L.payment}: ${formatMoney(row.payment)} €\n` +
+        `${L.remaining}: ${formatMoney(row.remaining)} €`,
     });
   } catch {
     setError("annuityLoan");

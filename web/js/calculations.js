@@ -1,3 +1,23 @@
+function roundMoney(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    throw new Error("invalid_money");
+  }
+
+  const sign = number < 0 ? -1 : 1;
+
+  return (
+    sign *
+    Math.round((Math.abs(number) + 1e-10) * 100) /
+    100
+  );
+}
+
+function formatMoney(value) {
+  return roundMoney(value).toFixed(2);
+}
+
 function numberValue(value) {
   const normalized = String(value).trim().replace(",", ".");
   const parsed = Number(normalized);
@@ -305,7 +325,7 @@ function calculateContribution(data, lang) {
 
   if (lang === "FI") {
     return {
-      result: `Tulos: ${result.toFixed(2)} €`,
+      result: `Tulos: ${formatMoney(result)} €`,
       formula:
 `Kate = myyntituotot − muuttuvat kustannukset
 Tulos = kate − kiinteät kustannukset
@@ -313,23 +333,23 @@ Kateprosentti = kate / myyntituotot × 100`,
       steps:
 `1. Kate
 
-Kate = ${sales.toFixed(2)} − ${variable.toFixed(2)}
-Kate = ${margin.toFixed(2)} €
+Kate = ${formatMoney(sales)} − ${variable.toFixed(2)}
+Kate = ${formatMoney(margin)} €
 
 2. Tulos
 
-Tulos = ${margin.toFixed(2)} − ${fixed.toFixed(2)}
-Tulos = ${result.toFixed(2)} €
+Tulos = ${formatMoney(margin)} − ${formatMoney(fixed)}
+Tulos = ${formatMoney(result)} €
 
 3. Kateprosentti
 
-Kateprosentti = ${margin.toFixed(2)} / ${sales.toFixed(2)} × 100
+Kateprosentti = ${formatMoney(margin)} / ${formatMoney(sales)} × 100
 Kateprosentti = ${percent.toFixed(2)} %`,
     };
   }
 
   return {
-    result: `Resultado final: ${result.toFixed(2)} €`,
+    result: `Resultado final: ${formatMoney(result)} €`,
     formula:
 `Margen = ingresos por ventas − costes variables
 Resultado = margen − costes fijos
@@ -337,17 +357,17 @@ Margen % = margen / ingresos por ventas × 100`,
     steps:
 `1. Margen de contribución
 
-Margen = ${sales.toFixed(2)} − ${variable.toFixed(2)}
-Margen = ${margin.toFixed(2)} €
+Margen = ${formatMoney(sales)} − ${variable.toFixed(2)}
+Margen = ${formatMoney(margin)} €
 
 2. Resultado
 
-Resultado = ${margin.toFixed(2)} − ${fixed.toFixed(2)}
-Resultado = ${result.toFixed(2)} €
+Resultado = ${formatMoney(margin)} − ${formatMoney(fixed)}
+Resultado = ${formatMoney(result)} €
 
 3. Porcentaje de margen
 
-Margen % = ${margin.toFixed(2)} / ${sales.toFixed(2)} × 100
+Margen % = ${formatMoney(margin)} / ${formatMoney(sales)} × 100
 Margen % = ${percent.toFixed(2)} %`,
   };
 }
@@ -833,18 +853,18 @@ function calculateUnitContribution(data, lang) {
         };
 
   return {
-    result: `${L.result}: ${result.toFixed(2)}`,
+    result: `${L.result}: ${formatMoney(result)} €`,
     formula:
       "sales = quantity × price\n" +
       "variable costs = quantity × variable cost\n" +
       "margin = sales − variable costs\n" +
       "result = margin − fixed costs",
     steps:
-      `${L.sales} = ${quantity} × ${price} = ${sales.toFixed(2)}\n` +
-      `${L.variable} = ${quantity} × ${variable} = ${costs.toFixed(2)}\n` +
-      `${L.margin} = ${margin.toFixed(2)} (${pct(margin).toFixed(2)} %)\n` +
-      `${L.fixed} = ${fixed.toFixed(2)} (${pct(fixed).toFixed(2)} %)\n` +
-      `${L.result} = ${result.toFixed(2)}`,
+      `${L.sales} = ${quantity} × ${formatMoney(price)} € = ${formatMoney(sales)} €\n` +
+      `${L.variable} = ${quantity} × ${formatMoney(variable)} € = ${formatMoney(costs)} €\n` +
+      `${L.margin} = ${formatMoney(margin)} € (${pct(margin).toFixed(2)} %)\n` +
+      `${L.fixed} = ${formatMoney(fixed)} € (${pct(fixed).toFixed(2)} %)\n` +
+      `${L.result} = ${formatMoney(result)} €`,
   };
 }
 
@@ -880,9 +900,9 @@ function calculateVat(data, lang) {
 
   return {
     result:
-      `${L.net} = ${net.toFixed(2)}, ` +
-      `${L.vat} = ${vat.toFixed(2)}, ` +
-      `${L.gross} = ${gross.toFixed(2)}`,
+      `${L.net} = ${formatMoney(net)}, ` +
+      `${L.vat} = ${formatMoney(vat)}, ` +
+      `${L.gross} = ${formatMoney(gross)}`,
 
     formula:
       data.mode === "gross"
@@ -890,9 +910,9 @@ function calculateVat(data, lang) {
         : "gross = net × (1 + rate)\nVAT = gross − net",
 
     steps:
-      `${L.net}: ${net.toFixed(2)}\n` +
-      `${L.vat}: ${vat.toFixed(2)}\n` +
-      `${L.gross}: ${gross.toFixed(2)}`,
+      `${L.net}: ${formatMoney(net)}\n` +
+      `${L.vat}: ${formatMoney(vat)}\n` +
+      `${L.gross}: ${formatMoney(gross)}`,
   };
 }
 
