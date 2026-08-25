@@ -5,6 +5,7 @@ let currentEquationTab = "linear";
 let currentContributionTab = "direct";
 let currentIndexTab = "change";
 let currentExponentialTab = "standard";
+let currentFunctionTab = "linear";
 
 const NAV_ITEMS = [
   ["loans", "navLoans"],
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   ["trigonometry", "navTrigonometry"],
   ["exponential", "navExponential"],
   ["vat", "navVat"],
+  ["functions", "navFunctions"],
 ];
 
 function el(id) {
@@ -163,8 +165,630 @@ function showModule(moduleKey) {
     case "vat":
       renderVat();
       break;
+    case "functions":
+      renderFunctions();
+      break;
   }
 }
+
+
+function graphSvg(points, type = "line", labels = []) {
+  const width = 720;
+  const height = 300;
+  const pad = 42;
+
+  if (!points.length) return "";
+
+  const values = points.map((point) => point.y);
+
+  const min = Math.min(0, ...values);
+  const max = Math.max(0, ...values);
+  const span = max - min || 1;
+
+  const x = (index) =>
+    pad +
+    (width - pad * 2) *
+      (
+        points.length === 1
+          ? 0.5
+          : index / (points.length - 1)
+      );
+
+  const y = (value) =>
+    height -
+    pad -
+    ((value - min) / span) *
+      (height - pad * 2);
+
+  const barWidth = Math.max(
+    8,
+    (width - pad * 2) / points.length * 0.64
+  );
+
+  const bars =
+    type === "bar"
+      ? points
+          .map(
+            (point, index) => `
+              <rect
+                x="${x(index) - barWidth / 2}"
+                y="${y(Math.max(0, point.y))}"
+                width="${barWidth}"
+                height="${Math.abs(y(point.y) - y(0))}"
+                fill="#ff9f0a"
+                rx="4"
+              />
+            `
+          )
+          .join("")
+      : "";
+
+  const line =
+    type === "line"
+      ? `
+          <polyline
+            points="${points
+              .map(
+                (point, index) =>
+                  `${x(index)},${y(point.y)}`
+              )
+              .join(" ")}"
+            fill="none"
+            stroke="#ff9f0a"
+            stroke-width="4"
+            stroke-linejoin="round"
+          />
+
+          ${points
+            .map(
+              (point, index) => `
+                <circle
+                  cx="${x(index)}"
+                  cy="${y(point.y)}"
+                  r="4"
+                  fill="#fff"
+                />
+              `
+            )
+            .join("")}
+        `
+      : bars;
+
+  const maxLabels = 7;
+
+  const tickIndexes =
+    points.length <= maxLabels
+      ? points.map((_, index) => index)
+      : Array.from(
+          { length: maxLabels },
+          (_, index) =>
+            Math.round(
+              index *
+                (points.length - 1) /
+                (maxLabels - 1)
+            )
+        );
+
+  const uniqueTickIndexes = [
+    ...new Set(tickIndexes),
+  ];
+
+  const ticks = uniqueTickIndexes
+    .map((index) => {
+      const point = points[index];
+
+      const label =
+        labels[index] ??
+        point.x;
+
+      return `
+        <text
+          x="${x(index)}"
+          y="${height - 12}"
+          text-anchor="middle"
+          fill="#a7a7ad"
+          font-size="11"
+        >
+          ${escapeHtml(label)}
+        </text>
+      `;
+    })
+    .join("");
+
+  return `
+    <svg
+      class="calc-chart"
+      viewBox="0 0 ${width} ${height}"
+      role="img"
+    >
+      <line
+        x1="${pad}"
+        y1="${y(0)}"
+        x2="${width - pad}"
+        y2="${y(0)}"
+        stroke="#777"
+      />
+
+      <line
+        x1="${pad}"
+        y1="${pad}"
+        x2="${pad}"
+        y2="${height - pad}"
+        stroke="#777"
+      />
+
+      ${line}
+      ${ticks}
+    </svg>
+  `;
+}
+
+function parseList(value) {
+  const text = String(value).trim();
+
+  if (!text) return [];
+
+  const parts =
+    /[;\n]/.test(text)
+      ? text.split(/[;\n]+/)
+      : text.split(/,\s*/);
+
+  return parts
+    .map((item) => numberValue(item.trim()))
+    .filter((item) => Number.isFinite(item));
+}
+
+function renderFunctions() {
+  el("moduleTitle").textContent = tr(currentLang, "navFunctions");
+  const tabs = [["linear","linearFunction"],["piecewise","piecewiseFunction"],["dataset","dataChart"],["pie","pieChart"],["loan","loanChart"]];
+  el("content").innerHTML = `<div class="tabs">${tabs.map(([k,l])=>`<button class="tab-button ${currentFunctionTab===k?"active":""}" onclick="currentFunctionTab='${k}';renderFunctions()">${tr(currentLang,l)}</button>`).join("")}</div><div id="functionTabContent"></div>`;
+  const c=el("functionTabContent");
+  if(currentFunctionTab==="linear") c.innerHTML=`${formulaCard("f(x) = m × x + b")}<div class="card input-card"><div class="fields">${field("fnM",tr(currentLang,"slope"),"10.5")}${field("fnB",tr(currentLang,"intercept"),"0")}${field("fnStart",tr(currentLang,"xStart"),"4")}${field("fnEnd",tr(currentLang,"xEnd"),"10")}${field("fnStep",tr(currentLang,"step"),"1")}${field("fnX",tr(currentLang,"evaluateX"),"10")}</div>${actionButtons("runLinearFunction()","exampleLinearFunction()","clearLinearFunction()")}</div><div id="functionOutput"></div>`;
+  else if(currentFunctionTab==="piecewise") c.innerHTML=`${formulaCard("x ≤ breakpoint: rate × x\nx > breakpoint: rate × breakpoint + rate × multiplier × (x − breakpoint)")}<div class="card input-card"><div class="fields">${field("pwRate",tr(currentLang,"baseRate"),"10.5")}${field("pwBreak",tr(currentLang,"breakpoint"),"8")}${field("pwMult",tr(currentLang,"multiplier"),"1.5")}${field("pwStart",tr(currentLang,"xStart"),"6")}${field("pwEnd",tr(currentLang,"xEnd"),"10")}${field("pwStep",tr(currentLang,"step"),"1")}${field("pwX",tr(currentLang,"evaluateX"),"10")}</div>${actionButtons("runPiecewiseFunction()","examplePiecewiseFunction()","clearPiecewiseFunction()")}</div><div id="functionOutput"></div>`;
+  else if(currentFunctionTab==="dataset") c.innerHTML=`<div class="card input-card"><div class="fields">${field("dataLabels",tr(currentLang,"labels"),"A, B, C, D, E")}${field("dataValues",tr(currentLang,"values"),"4.6, 8.3, 7.7, 9.4, 10")}</div><div class="field"><label>${tr(currentLang,"chartType")}</label><select id="dataType"><option value="line">${tr(currentLang,"lineChart")}</option><option value="bar">${tr(currentLang,"barChart")}</option></select></div>${actionButtons("runDatasetChart()","exampleDatasetChart()","clearDatasetChart()")}</div><div id="functionOutput"></div>`;
+  else if(currentFunctionTab==="pie") c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"mode")}</label><select id="pieMode"><option value="values">${tr(currentLang,"valuesToPercentages")}</option><option value="percentages">${tr(currentLang,"percentagesToValues")}</option></select></div>${field("pieLabels",tr(currentLang,"labels"),"Goods, Food, Office, Facilities, Salaries, Chemicals")}${field("pieValues",tr(currentLang,"values"),"10, 23, 1, 5, 59, 2")}${field("pieTotal",tr(currentLang,"totalAmount"),"25480")}${actionButtons("runPieChart()","examplePieChart()","clearPieChart()")}</div><div id="functionOutput"></div>`;
+  else c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"loanType")}</label><select id="chartLoanType"><option value="constant">${tr(currentLang,"constantLoan")}</option><option value="annuity">${tr(currentLang,"annuityLoan")}</option></select></div><div class="fields">${field("chartCapital",tr(currentLang,"capital"),"210000")}${field("chartMonths",tr(currentLang,"months"),"300")}${field("chartInterest",tr(currentLang,"annualInterest"),"1.26")}${field("chartInstallment",tr(currentLang,"installmentNumber"),"1")}</div><div class="field"><label for="chartMetric">${tr(currentLang,"chartMetric")}</label><select id="chartMetric"><option value="remaining">${tr(currentLang,"remainingBalance")}</option><option value="interest">${tr(currentLang,"interestComponent")}</option><option value="principal">${tr(currentLang,"principalComponent")}</option><option value="payment">${tr(currentLang,"payment")}</option></select></div>${actionButtons("runLoanChart()","exampleLoanChart()","clearLoanChart()")}</div><div id="functionOutput"></div>`;
+}
+
+function outputFunction(title, text, chart = "") {
+  el("functionOutput").innerHTML = `
+    <div class="card result-card">
+      <h2>${escapeHtml(title)}</h2>
+      <div class="function-result-text">${escapeHtml(text)}</div>
+    </div>
+
+    ${
+      chart
+        ? `<div class="card chart-card">${chart}</div>`
+        : ""
+    }
+  `;
+}
+
+function rangePoints(start,end,step,fn){const a=[]; for(let x=start;x<=end+step/1000&&a.length<200;x+=step)a.push({x,y:fn(x)}); return a;}
+
+function runLinearFunction() {
+  try {
+    const m = numberValue(el("fnM").value);
+    const b = numberValue(el("fnB").value);
+    const start = numberValue(el("fnStart").value);
+    const end = numberValue(el("fnEnd").value);
+    const step = numberValue(el("fnStep").value);
+    const evaluateX = numberValue(el("fnX").value);
+
+    if (
+      ![m, b, start, end, step, evaluateX].every(Number.isFinite) ||
+      step <= 0 ||
+      end < start
+    ) {
+      throw new Error("invalid_input");
+    }
+
+    const points = rangePoints(
+      start,
+      end,
+      step,
+      (x) => m * x + b
+    );
+
+    const trend =
+      m > 0
+        ? tr(currentLang, "increasing")
+        : m < 0
+          ? tr(currentLang, "decreasing")
+          : tr(currentLang, "constantFunction");
+
+    const evaluated = m * evaluateX + b;
+
+    outputFunction(
+      `f(${evaluateX}) = ${evaluated.toFixed(2)}`,
+      `${tr(currentLang, "slope")}: ${m}\n` +
+      `${tr(currentLang, "intercept")}: ${b}\n` +
+      `${tr(currentLang, "functionBehavior")}: ${trend}\n\n` +
+      `${tr(currentLang, "valueTable")}:\n` +
+      points
+        .map(
+          (point) =>
+            `${point.x.toFixed(2)} | ${point.y.toFixed(2)}`
+        )
+        .join("\n"),
+      graphSvg(points)
+    );
+  } catch {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+  }
+}
+
+function exampleLinearFunction(){el("fnM").value="10.5";el("fnB").value="0";el("fnStart").value="4";el("fnEnd").value="10";el("fnStep").value="1";el("fnX").value="10";runLinearFunction();} function clearLinearFunction(){renderFunctions();}
+
+function runPiecewiseFunction() {
+  try {
+    const rate = numberValue(el("pwRate").value);
+    const breakpoint = numberValue(el("pwBreak").value);
+    const multiplier = numberValue(el("pwMult").value);
+    const start = numberValue(el("pwStart").value);
+    const end = numberValue(el("pwEnd").value);
+    const step = numberValue(el("pwStep").value);
+    const evaluateX = numberValue(el("pwX").value);
+
+    if (
+      ![
+        rate,
+        breakpoint,
+        multiplier,
+        start,
+        end,
+        step,
+        evaluateX,
+      ].every(Number.isFinite) ||
+      step <= 0 ||
+      end < start ||
+      multiplier < 0
+    ) {
+      throw new Error("invalid_input");
+    }
+
+    const fn = (x) =>
+      x <= breakpoint
+        ? rate * x
+        : rate * breakpoint +
+          rate * multiplier * (x - breakpoint);
+
+    const points = rangePoints(
+      start,
+      end,
+      step,
+      fn
+    );
+
+    const afterRate = rate * multiplier;
+
+    outputFunction(
+      `${tr(currentLang, "piecewiseFunction")} · ${evaluateX} = ${fn(evaluateX).toFixed(2)}`,
+      `${tr(currentLang, "baseRate")}: ${rate.toFixed(2)}\n` +
+      `${tr(currentLang, "breakpoint")}: ${breakpoint}\n` +
+      `${tr(currentLang, "multiplier")}: ${multiplier}\n` +
+      `${tr(currentLang, "rateAfterBreakpoint")}: ${afterRate.toFixed(2)}\n\n` +
+      `${tr(currentLang, "valueTable")}:\n` +
+      points
+        .map(
+          (point) =>
+            `${point.x.toFixed(2)} | ${point.y.toFixed(2)}`
+        )
+        .join("\n"),
+      graphSvg(points)
+    );
+  } catch {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+  }
+}
+
+function examplePiecewiseFunction(){el("pwRate").value="10.5";el("pwBreak").value="8";el("pwMult").value="1.5";el("pwStart").value="6";el("pwEnd").value="10";el("pwStep").value="1";el("pwX").value="10";runPiecewiseFunction();} function clearPiecewiseFunction(){renderFunctions();}
+
+function runDatasetChart() {
+  const values = parseList(
+    el("dataValues").value
+  ).slice(0, 12);
+
+  const labels = el("dataLabels")
+    .value
+    .split(/[,;]+/)
+    .map((value) => value.trim());
+
+  if (values.length < 2) {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+    return;
+  }
+
+  const total = values.reduce(
+    (sum, value) => sum + value,
+    0
+  );
+
+  const mean = total / values.length;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+
+  const minIndex = values.indexOf(min);
+  const maxIndex = values.indexOf(max);
+
+  const first = values[0];
+  const last = values.at(-1);
+
+  const change =
+    first !== 0
+      ? ((last - first) / first) * 100
+      : null;
+
+  const changeText =
+    change === null
+      ? tr(currentLang, "notAvailable")
+      : `${change.toFixed(2)} %`;
+
+  outputFunction(
+    tr(currentLang, "statistics"),
+    `${tr(currentLang, "count")}: ${values.length}\n` +
+    `${tr(currentLang, "total")}: ${total.toFixed(2)}\n` +
+    `${tr(currentLang, "mean")}: ${mean.toFixed(2)}\n` +
+    `${tr(currentLang, "minimum")}: ${min.toFixed(2)} (${labels[minIndex] || minIndex + 1})\n` +
+    `${tr(currentLang, "maximum")}: ${max.toFixed(2)} (${labels[maxIndex] || maxIndex + 1})\n` +
+    `${tr(currentLang, "range")}: ${range.toFixed(2)}\n` +
+    `${tr(currentLang, "firstToLastChange")}: ${changeText}`,
+    graphSvg(
+      values.map(
+        (value, index) => ({
+          x: index,
+          y: value,
+        })
+      ),
+      el("dataType").value,
+      labels
+    )
+  );
+}
+
+function exampleDatasetChart(){runDatasetChart();} function clearDatasetChart(){renderFunctions();}
+
+function runPieChart() {
+  const labels = el("pieLabels")
+    .value
+    .split(/[,;]+/)
+    .map((value) => value.trim());
+
+  const raw = parseList(el("pieValues").value);
+  const mode = el("pieMode").value;
+
+  const totalAmount =
+    mode === "percentages"
+      ? numberValue(el("pieTotal").value)
+      : null;
+
+  if (
+    raw.length < 2 ||
+    raw.length > 10 ||
+    !raw.every(
+      (value) =>
+        Number.isFinite(value) && value >= 0
+    ) ||
+    (
+      mode === "percentages" &&
+      (
+        !Number.isFinite(totalAmount) ||
+        totalAmount <= 0
+      )
+    )
+  ) {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+    return;
+  }
+
+  const values =
+    mode === "percentages"
+      ? raw.map(
+          (percentage) =>
+            totalAmount * percentage / 100
+        )
+      : raw;
+
+  const chartTotal = values.reduce(
+    (sum, value) => sum + value,
+    0
+  );
+
+  if (chartTotal <= 0) {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+    return;
+  }
+
+  const largestIndex = values.indexOf(
+    Math.max(...values)
+  );
+
+  const smallestPositive = Math.min(
+    ...values.filter((value) => value > 0)
+  );
+
+  const smallestIndex =
+    values.indexOf(smallestPositive);
+
+  let start = 0;
+
+  const paths = values
+    .map((value, index) => {
+      if (value === 0) return "";
+
+      const angleStart =
+        start / chartTotal * Math.PI * 2;
+
+      start += value;
+
+      const angleEnd =
+        start / chartTotal * Math.PI * 2;
+
+      const x1 =
+        50 + 42 * Math.cos(angleStart);
+
+      const y1 =
+        50 + 42 * Math.sin(angleStart);
+
+      const x2 =
+        50 + 42 * Math.cos(angleEnd);
+
+      const y2 =
+        50 + 42 * Math.sin(angleEnd);
+
+      return `
+        <path
+          d="M50 50
+             L${x1} ${y1}
+             A42 42 0 ${angleEnd - angleStart > Math.PI ? 1 : 0} 1 ${x2} ${y2}
+             Z"
+          fill="hsl(${index * 55 % 360} 80% 55%)"
+        />
+      `;
+    })
+    .join("");
+
+  const rows = values.map(
+    (value, index) => {
+      const percentage =
+        value / chartTotal * 100;
+
+      const angle =
+        value / chartTotal * 360;
+
+      if (mode === "percentages") {
+        return (
+          `${labels[index] || index + 1}: ` +
+          `${formatMoney(value)} € · ` +
+          `${raw[index].toFixed(2)} % · ` +
+          `${angle.toFixed(1)}°`
+        );
+      }
+
+      return (
+        `${labels[index] || index + 1}: ` +
+        `${value.toFixed(2)} · ` +
+        `${percentage.toFixed(2)} % · ` +
+        `${angle.toFixed(1)}°`
+      );
+    }
+  );
+
+  outputFunction(
+    tr(currentLang, "pieChart"),
+    (
+      mode === "percentages"
+        ? `${tr(currentLang, "totalAmount")}: ${formatMoney(totalAmount)} €\n`
+        : `${tr(currentLang, "total")}: ${chartTotal.toFixed(2)}\n`
+    ) +
+    `${tr(currentLang, "largest")}: ${labels[largestIndex] || largestIndex + 1}\n` +
+    `${tr(currentLang, "smallest")}: ${labels[smallestIndex] || smallestIndex + 1}\n\n` +
+    rows.join("\n"),
+    `<svg
+       class="calc-chart pie-chart"
+       viewBox="0 0 100 100"
+       role="img"
+     >
+       ${paths}
+     </svg>`
+  );
+}
+
+function examplePieChart(){runPieChart();} function clearPieChart(){renderFunctions();}
+
+function runLoanChart() {
+  try {
+    const data = {
+      capital: el("chartCapital").value,
+      months: el("chartMonths").value,
+      annualInterest: el("chartInterest").value,
+      installment: el("chartInstallment").value,
+    };
+
+    const constant =
+      el("chartLoanType").value === "constant";
+
+    const output = constant
+      ? calculateLoanSchedule(data)
+      : calculateAnnuityDetails(data);
+
+    const selected = output.selected;
+
+    const metric =
+      el("chartMetric")?.value ||
+      "remaining";
+
+    const metricValue = (row) => {
+      switch (metric) {
+        case "interest":
+          return row.interest;
+
+        case "principal":
+          return row.amortization ?? row.principal;
+
+        case "payment":
+          return row.payment;
+
+        case "remaining":
+        default:
+          return row.remaining;
+      }
+    };
+
+    const sampleEvery = Math.max(
+      1,
+      Math.ceil(output.rows.length / 80)
+    );
+
+    const sampledRows =
+      output.rows.filter(
+        (row, index) =>
+          index === 0 ||
+          index === output.rows.length - 1 ||
+          index % sampleEvery === 0
+      );
+
+    const points = sampledRows.map(
+      (row) => ({
+        x: row.number,
+        y: metricValue(row),
+      })
+    );
+
+    outputFunction(
+      `${tr(currentLang, "installmentNumber")} ${selected.number}`,
+      `${tr(currentLang, "payment")}: ${formatMoney(selected.payment)} €\n` +
+      `${tr(currentLang, "interestComponent")}: ${formatMoney(selected.interest)} €\n` +
+      `${tr(currentLang, "principalComponent")}: ${formatMoney(selected.amortization ?? selected.principal)} €\n` +
+      `${tr(currentLang, "remainingBalance")}: ${formatMoney(selected.remaining)} €`,
+      graphSvg(points)
+    );
+  } catch {
+    outputFunction(
+      tr(currentLang, "invalidInput"),
+      ""
+    );
+  }
+}
+
+function exampleLoanChart(){runLoanChart();} function clearLoanChart(){renderFunctions();}
 
 function renderLoans() {
   el("moduleTitle").textContent = tr(currentLang, "navLoans");

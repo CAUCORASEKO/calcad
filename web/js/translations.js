@@ -68,7 +68,7 @@ const TRANSLATIONS = {
 
     initialValue: "Valor inicial k",
     factor: "Factor a",
-    time: "Tiempo t", systems: "Sistemas de ecuaciones", advanced: "Avanzada", simpleMode: "Favorables / totales", dieOne: "Un dado", diceTwo: "Dos dados", customDice: "Dados personalizados", probabilityKind: "Pregunta", target: "Objetivo", sideCount: "Caras", secondSideCount: "Caras del segundo dado", comparison: "Comparación", equal: "Igual a", greater: "Mayor que", less: "Menor que", greaterEqual: "Mayor o igual que", lessEqual: "Menor o igual que", atLeast: "Al menos", divisible: "Divisible / cociente entero", value: "Valor", sum: "Suma", product: "Producto", atLeastOne: "Al menos un dado es igual a", totalOutcomes: "Resultados totales", favorableOutcomes: "Resultados favorables", favorablePairs: "Parejas favorables", unique: "Solución única", none: "Sin solución", infinite: "Infinitas soluciones", targetValue: "Valor objetivo", solveValue: "Evaluar t", solveTime: "Despejar t", hypotenuse: "Hipotenusa", angle: "Ángulo (grados)", slope: "Pendiente / subida:recorrido", quotient: "Cociente entero",
+    time: "Tiempo t", systems: "Sistemas de ecuaciones", advanced: "Avanzada", simpleMode: "Favorables / totales", dieOne: "Un dado", diceTwo: "Dos dados", customDice: "Dados personalizados", probabilityKind: "Pregunta", target: "Objetivo", sideCount: "Caras", secondSideCount: "Caras del segundo dado", comparison: "Comparación", equal: "Igual a", greater: "Mayor que", less: "Menor que", greaterEqual: "Mayor o igual que", lessEqual: "Menor o igual que", atLeast: "Al menos", divisible: "Divisible / cociente entero", value: "Valor", sum: "Suma", product: "Producto", atLeastOne: "Al menos un dado es igual a", totalOutcomes: "Resultados totales", favorableOutcomes: "Resultados favorables", favorablePairs: "Parejas favorables", unique: "Solución única", none: "Sin solución", infinite: "Infinitas soluciones", targetValue: "Valor objetivo", solveValue: "Evaluar t", solveTime: "Despejar t", hypotenuse: "Hipotenusa", angle: "Ángulo (grados)", slope: "Pendiente", quotient: "Cociente entero",
   },
 
   FI: {
@@ -152,4 +152,47 @@ Object.assign(TRANSLATIONS.FI, {
   directValues: "Suorat arvot",
   percentageChange: "Prosenttimuutos",
   exponentialStandard: "Eksponenttilaskenta",
+});
+
+const PHASE3={EN:{navFunctions:"Functions & Charts",linearFunction:"Linear function",piecewiseFunction:"Piecewise function",dataChart:"Data chart",pieChart:"Pie chart",loanChart:"Loan chart",intercept:"Intercept",xStart:"X start",xEnd:"X end",step:"Step",evaluateX:"Evaluate x",valueTable:"Value table",table:"Table",baseRate:"Base rate",breakpoint:"Breakpoint",multiplier:"Multiplier",labels:"Labels / categories",values:"Values",chartType:"Chart type",lineChart:"Line chart",barChart:"Bar chart",statistics:"Statistics",total:"Total",mean:"Mean",minimum:"Minimum",maximum:"Maximum",range:"Range",largest:"Largest",valuesToPercentages:"Values to percentages",percentagesToValues:"Percentages to values",totalAmount:"Total amount",loanType:"Loan type",remainingBalance:"Remaining balance",payment:"Payment",interestComponent:"Interest",principalComponent:"Principal / amortization"},ES:{navFunctions:"Funciones y gráficos",linearFunction:"Función lineal",piecewiseFunction:"Función por tramos",dataChart:"Gráfico de datos",pieChart:"Gráfico circular",loanChart:"Gráfico del préstamo",intercept:"Intersección con eje y",xStart:"Inicio de x",xEnd:"Fin de x",step:"Paso",evaluateX:"Calcular x",valueTable:"Tabla de valores",table:"Tabla",baseRate:"Tarifa base",breakpoint:"Punto de corte",multiplier:"Multiplicador",labels:"Etiquetas / categorías",values:"Valores",chartType:"Tipo de gráfico",lineChart:"Gráfico lineal",barChart:"Gráfico de barras",statistics:"Estadísticas",total:"Total",mean:"Media",minimum:"Mínimo",maximum:"Máximo",range:"Rango",largest:"Mayor",valuesToPercentages:"Valores a porcentajes",percentagesToValues:"Porcentajes a valores",totalAmount:"Importe total",loanType:"Tipo de préstamo",remainingBalance:"Saldo restante",payment:"Cuota",interestComponent:"Interés",principalComponent:"Capital / amortización"},FI:{navFunctions:"Funktiot ja kuvaajat",linearFunction:"Lineaarinen funktio",piecewiseFunction:"Paloittainen funktio",dataChart:"Datakuvaaja",pieChart:"Ympyrädiagrammi",loanChart:"Lainakaavio",intercept:"Vakiotermi",xStart:"X:n alku",xEnd:"X:n loppu",step:"Askel",evaluateX:"Laske x",valueTable:"Arvotaulukko",table:"Taulukko",baseRate:"Peruskorvaus",breakpoint:"Raja-arvo",multiplier:"Kerroin",labels:"Tunnisteet / kategoriat",values:"Arvot",chartType:"Kaaviotyyppi",lineChart:"Viivakaavio",barChart:"Pylväskaavio",statistics:"Tilastot",total:"Summa",mean:"Keskiarvo",minimum:"Pienin",maximum:"Suurin",range:"Vaihteluväli",largest:"Suurin",valuesToPercentages:"Arvoista prosenteiksi",percentagesToValues:"Prosenteista arvoiksi",totalAmount:"Kokonaissumma",loanType:"Lainatyyppi",remainingBalance:"Jäljellä oleva saldo",payment:"Maksu",interestComponent:"Korko",principalComponent:"Pääoma / lyhennys"}};
+Object.keys(PHASE3).forEach((lang)=>Object.assign(TRANSLATIONS[lang],PHASE3[lang]));
+
+
+Object.assign(TRANSLATIONS.EN, {
+  increasing: "Increasing",
+  decreasing: "Decreasing",
+  constantFunction: "Constant",
+  functionBehavior: "Behavior",
+  rateAfterBreakpoint: "Rate after breakpoint",
+  count: "Number of values",
+  firstToLastChange: "Change from first to last",
+  notAvailable: "Not available",
+  smallest: "Smallest",
+  chartMetric: "Chart value",
+});
+
+Object.assign(TRANSLATIONS.ES, {
+  increasing: "Creciente",
+  decreasing: "Decreciente",
+  constantFunction: "Constante",
+  functionBehavior: "Comportamiento",
+  rateAfterBreakpoint: "Tarifa después del punto de corte",
+  count: "Número de valores",
+  firstToLastChange: "Cambio del primero al último",
+  notAvailable: "No disponible",
+  smallest: "Menor",
+  chartMetric: "Valor del gráfico",
+});
+
+Object.assign(TRANSLATIONS.FI, {
+  increasing: "Kasvava",
+  decreasing: "Vähenevä",
+  constantFunction: "Vakio",
+  functionBehavior: "Käyttäytyminen",
+  rateAfterBreakpoint: "Rajan jälkeinen korvaus",
+  count: "Arvojen määrä",
+  firstToLastChange: "Muutos ensimmäisestä viimeiseen",
+  notAvailable: "Ei saatavilla",
+  smallest: "Pienin",
+  chartMetric: "Kaavion arvo",
 });
