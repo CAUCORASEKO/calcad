@@ -1013,6 +1013,24 @@ function calculateLoanSchedule(data) {
 function calculateAnnuityDetails(data) { const K=numberValue(data.capital), n=numberValue(data.months), annual=numberValue(data.annualInterest), selected=numberValue(data.installment||1); if(K<0||n<1||selected<1||selected>n) throw new Error("invalid_input"); const i=annual/1200, payment=i===0?K/n:K*i/(1-Math.pow(1+i,-n)), rows=[]; let balance=K; for(let number=1;number<=n;number++){const opening=balance, interest=opening*i, principal=Math.min(payment-interest,opening); balance=Math.max(0,opening-principal); rows.push({number,opening,interest,principal,payment:principal+interest,remaining:balance});} const totalPaid=rows.reduce((s,r)=>s+r.payment,0); return {payment,rows,first:rows[0],selected:rows[selected-1],last:rows[n-1],totalPaid,totalInterest:totalPaid-K}; }
 
 
+function signedAlgebraTerm(value, suffix = "", decimals = 2) {
+  const number = Number(value);
+  const absolute = Math.abs(number).toFixed(decimals);
+
+  return number < 0
+    ? ` − ${absolute}${suffix}`
+    : ` + ${absolute}${suffix}`;
+}
+
+function subtractAlgebraTerm(value, decimals = 2) {
+  const number = Number(value);
+  const absolute = Math.abs(number).toFixed(decimals);
+
+  return number < 0
+    ? `+ ${absolute}`
+    : `− ${absolute}`;
+}
+
 function calculateLinearEquation(data, lang) {
   const a = numberValue(data.a);
   const b = numberValue(data.b);
@@ -1031,15 +1049,15 @@ function calculateLinearEquation(data, lang) {
 `ax + b = c
 x = (c − b) / a`,
       steps:
-`${a.toFixed(2)}x + ${b.toFixed(2)} = ${c.toFixed(2)}
+`${a.toFixed(2)}x${signedAlgebraTerm(b)} = ${c.toFixed(2)}
 
 1. Vähennetään b molemmilta puolilta
 
-${a.toFixed(2)}x = ${c.toFixed(2)} − ${b.toFixed(2)}
+${a.toFixed(2)}x = ${c.toFixed(2)} ${subtractAlgebraTerm(b)}
 
 2. Jaetaan a:lla
 
-x = (${c.toFixed(2)} − ${b.toFixed(2)}) / ${a.toFixed(2)}
+x = (${c.toFixed(2)} ${subtractAlgebraTerm(b)}) / ${a.toFixed(2)}
 
 x = ${x.toFixed(4)}`,
     };
@@ -1051,15 +1069,15 @@ x = ${x.toFixed(4)}`,
 `ax + b = c
 x = (c − b) / a`,
     steps:
-`${a.toFixed(2)}x + ${b.toFixed(2)} = ${c.toFixed(2)}
+`${a.toFixed(2)}x${signedAlgebraTerm(b)} = ${c.toFixed(2)}
 
 1. Restamos b en ambos lados
 
-${a.toFixed(2)}x = ${c.toFixed(2)} − ${b.toFixed(2)}
+${a.toFixed(2)}x = ${c.toFixed(2)} ${subtractAlgebraTerm(b)}
 
 2. Dividimos por a
 
-x = (${c.toFixed(2)} − ${b.toFixed(2)}) / ${a.toFixed(2)}
+x = (${c.toFixed(2)} ${subtractAlgebraTerm(b)}) / ${a.toFixed(2)}
 
 x = ${x.toFixed(4)}`,
   };
@@ -1115,7 +1133,7 @@ x2 = ${x2.toFixed(4)}`;
 D = b² − 4ac
 x = (−b ± √D) / (2a)`,
     steps:
-`${a.toFixed(2)}x² + ${b.toFixed(2)}x + ${c.toFixed(2)} = 0
+`${a.toFixed(2)}x²${signedAlgebraTerm(b, "x")}${signedAlgebraTerm(c)} = 0
 
 D = b² − 4ac
 

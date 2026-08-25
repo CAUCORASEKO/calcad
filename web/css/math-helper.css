@@ -100,3 +100,28 @@ h1 { margin: 0; font-size: 38px; line-height: 1.05; letter-spacing: -1.5px; } .s
     min-height: 190px;
   }
 }
+
+.signed-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.signed-input input {
+  min-width: 0;
+}
+
+.sign-toggle {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sign-toggle:active {
+  transform: scale(.96);
+}

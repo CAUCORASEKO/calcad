@@ -33,20 +33,60 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function field(name, label, value = "") {
+
+function field(name, label, value = "", allowSign = false) {
   return `
     <div class="field">
       <label for="${name}">${escapeHtml(label)}</label>
-      <input
-        id="${name}"
-        name="${name}"
-        type="text"
-        inputmode="decimal"
-        value="${escapeHtml(value)}"
-        autocomplete="off"
-      >
+
+      <div class="${allowSign ? "signed-input" : ""}">
+        <input
+          id="${name}"
+          name="${name}"
+          type="text"
+          inputmode="decimal"
+          value="${escapeHtml(value)}"
+          autocomplete="off"
+        >
+
+        ${
+          allowSign
+            ? `
+              <button
+                type="button"
+                class="sign-toggle"
+                aria-label="Toggle sign"
+                onclick="toggleSign('${name}')"
+              >
+                ±
+              </button>
+            `
+            : ""
+        }
+      </div>
     </div>
   `;
+}
+
+function toggleSign(id) {
+  const input = el(id);
+
+  if (!input) return;
+
+  const raw = input.value.trim();
+
+  if (!raw) {
+    input.value = "-";
+    input.focus();
+    return;
+  }
+
+  input.value =
+    raw.startsWith("-")
+      ? raw.slice(1)
+      : `-${raw}`;
+
+  input.focus();
 }
 
 function actionButtons(calculateHandler, exampleHandler, clearHandler) {
@@ -172,10 +212,14 @@ function showModule(moduleKey) {
 }
 
 
+
 function graphSvg(points, type = "line", labels = []) {
   const width = 720;
   const height = 300;
-  const pad = 42;
+  const padLeft = 48;
+  const padRight = 24;
+  const padTop = 30;
+  const padBottom = 48;
 
   if (!points.length) return "";
 
@@ -185,76 +229,98 @@ function graphSvg(points, type = "line", labels = []) {
   const max = Math.max(0, ...values);
   const span = max - min || 1;
 
+  const plotWidth = width - padLeft - padRight;
+  const plotHeight = height - padTop - padBottom;
+
   const x = (index) =>
-    pad +
-    (width - pad * 2) *
-      (
-        points.length === 1
-          ? 0.5
-          : index / (points.length - 1)
-      );
+    padLeft +
+    (
+      points.length === 1
+        ? plotWidth / 2
+        : plotWidth * index / (points.length - 1)
+    );
 
   const y = (value) =>
-    height -
-    pad -
-    ((value - min) / span) *
-      (height - pad * 2);
+    padTop +
+    (max - value) / span * plotHeight;
+
+  const axisY = y(0);
 
   const barWidth = Math.max(
-    8,
-    (width - pad * 2) / points.length * 0.64
+    6,
+    Math.min(
+      54,
+      plotWidth / Math.max(points.length, 1) * 0.62
+    )
   );
 
   const bars =
     type === "bar"
       ? points
-          .map(
-            (point, index) => `
+          .map((point, index) => {
+            const top = Math.min(y(point.y), axisY);
+            const barHeight = Math.abs(y(point.y) - axisY);
+
+            return `
               <rect
                 x="${x(index) - barWidth / 2}"
-                y="${y(Math.max(0, point.y))}"
+                y="${top}"
                 width="${barWidth}"
-                height="${Math.abs(y(point.y) - y(0))}"
+                height="${barHeight}"
                 fill="#ff9f0a"
                 rx="4"
+              />
+            `;
+          })
+          .join("")
+      : "";
+
+  const polyline =
+    type === "line"
+      ? `
+        <polyline
+          points="${points
+            .map(
+              (point, index) =>
+                `${x(index)},${y(point.y)}`
+            )
+            .join(" ")}"
+          fill="none"
+          stroke="#ff9f0a"
+          stroke-width="4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      `
+      : "";
+
+  /*
+   * Short educational graphs benefit from visible data points.
+   * Long loan schedules become unreadable with dozens of circles,
+   * so markers are intentionally suppressed there.
+   */
+  const markers =
+    type === "line" && points.length <= 20
+      ? points
+          .map(
+            (point, index) => `
+              <circle
+                cx="${x(index)}"
+                cy="${y(point.y)}"
+                r="4"
+                fill="#ffffff"
               />
             `
           )
           .join("")
       : "";
 
-  const line =
-    type === "line"
-      ? `
-          <polyline
-            points="${points
-              .map(
-                (point, index) =>
-                  `${x(index)},${y(point.y)}`
-              )
-              .join(" ")}"
-            fill="none"
-            stroke="#ff9f0a"
-            stroke-width="4"
-            stroke-linejoin="round"
-          />
-
-          ${points
-            .map(
-              (point, index) => `
-                <circle
-                  cx="${x(index)}"
-                  cy="${y(point.y)}"
-                  r="4"
-                  fill="#fff"
-                />
-              `
-            )
-            .join("")}
-        `
-      : bars;
-
-  const maxLabels = 7;
+  /*
+   * Keep the X axis readable on a phone.
+   * At most six labels are distributed across the entire series,
+   * always including the first and last point.
+   */
+  const maxLabels = 6;
 
   const tickIndexes =
     points.length <= maxLabels
@@ -264,8 +330,8 @@ function graphSvg(points, type = "line", labels = []) {
           (_, index) =>
             Math.round(
               index *
-                (points.length - 1) /
-                (maxLabels - 1)
+              (points.length - 1) /
+              (maxLabels - 1)
             )
         );
 
@@ -282,12 +348,20 @@ function graphSvg(points, type = "line", labels = []) {
         point.x;
 
       return `
+        <line
+          x1="${x(index)}"
+          y1="${height - padBottom}"
+          x2="${x(index)}"
+          y2="${height - padBottom + 5}"
+          stroke="#777"
+        />
+
         <text
           x="${x(index)}"
-          y="${height - 12}"
+          y="${height - 16}"
           text-anchor="middle"
           fill="#a7a7ad"
-          font-size="11"
+          font-size="12"
         >
           ${escapeHtml(label)}
         </text>
@@ -300,24 +374,27 @@ function graphSvg(points, type = "line", labels = []) {
       class="calc-chart"
       viewBox="0 0 ${width} ${height}"
       role="img"
+      preserveAspectRatio="xMidYMid meet"
     >
       <line
-        x1="${pad}"
-        y1="${y(0)}"
-        x2="${width - pad}"
-        y2="${y(0)}"
+        x1="${padLeft}"
+        y1="${axisY}"
+        x2="${width - padRight}"
+        y2="${axisY}"
         stroke="#777"
       />
 
       <line
-        x1="${pad}"
-        y1="${pad}"
-        x2="${pad}"
-        y2="${height - pad}"
+        x1="${padLeft}"
+        y1="${padTop}"
+        x2="${padLeft}"
+        y2="${height - padBottom}"
         stroke="#777"
       />
 
-      ${line}
+      ${polyline}
+      ${bars}
+      ${markers}
       ${ticks}
     </svg>
   `;
@@ -343,8 +420,8 @@ function renderFunctions() {
   const tabs = [["linear","linearFunction"],["piecewise","piecewiseFunction"],["dataset","dataChart"],["pie","pieChart"],["loan","loanChart"]];
   el("content").innerHTML = `<div class="tabs">${tabs.map(([k,l])=>`<button class="tab-button ${currentFunctionTab===k?"active":""}" onclick="currentFunctionTab='${k}';renderFunctions()">${tr(currentLang,l)}</button>`).join("")}</div><div id="functionTabContent"></div>`;
   const c=el("functionTabContent");
-  if(currentFunctionTab==="linear") c.innerHTML=`${formulaCard("f(x) = m × x + b")}<div class="card input-card"><div class="fields">${field("fnM",tr(currentLang,"slope"),"10.5")}${field("fnB",tr(currentLang,"intercept"),"0")}${field("fnStart",tr(currentLang,"xStart"),"4")}${field("fnEnd",tr(currentLang,"xEnd"),"10")}${field("fnStep",tr(currentLang,"step"),"1")}${field("fnX",tr(currentLang,"evaluateX"),"10")}</div>${actionButtons("runLinearFunction()","exampleLinearFunction()","clearLinearFunction()")}</div><div id="functionOutput"></div>`;
-  else if(currentFunctionTab==="piecewise") c.innerHTML=`${formulaCard("x ≤ breakpoint: rate × x\nx > breakpoint: rate × breakpoint + rate × multiplier × (x − breakpoint)")}<div class="card input-card"><div class="fields">${field("pwRate",tr(currentLang,"baseRate"),"10.5")}${field("pwBreak",tr(currentLang,"breakpoint"),"8")}${field("pwMult",tr(currentLang,"multiplier"),"1.5")}${field("pwStart",tr(currentLang,"xStart"),"6")}${field("pwEnd",tr(currentLang,"xEnd"),"10")}${field("pwStep",tr(currentLang,"step"),"1")}${field("pwX",tr(currentLang,"evaluateX"),"10")}</div>${actionButtons("runPiecewiseFunction()","examplePiecewiseFunction()","clearPiecewiseFunction()")}</div><div id="functionOutput"></div>`;
+  if(currentFunctionTab==="linear") c.innerHTML=`${formulaCard("f(x) = m × x + b")}<div class="card input-card"><div class="fields">${field("fnM",tr(currentLang,"slope"),"10.5",true)}${field("fnB",tr(currentLang,"intercept"),"0",true)}${field("fnStart",tr(currentLang,"xStart"),"4",true)}${field("fnEnd",tr(currentLang,"xEnd"),"10",true)}${field("fnStep",tr(currentLang,"step"),"1")}${field("fnX",tr(currentLang,"evaluateX"),"10",true)}</div>${actionButtons("runLinearFunction()","exampleLinearFunction()","clearLinearFunction()")}</div><div id="functionOutput"></div>`;
+  else if(currentFunctionTab==="piecewise") c.innerHTML=`${formulaCard("x ≤ breakpoint: rate × x\nx > breakpoint: rate × breakpoint + rate × multiplier × (x − breakpoint)")}<div class="card input-card"><div class="fields">${field("pwRate",tr(currentLang,"baseRate"),"10.5")}${field("pwBreak",tr(currentLang,"breakpoint"),"8",true)}${field("pwMult",tr(currentLang,"multiplier"),"1.5")}${field("pwStart",tr(currentLang,"xStart"),"6",true)}${field("pwEnd",tr(currentLang,"xEnd"),"10",true)}${field("pwStep",tr(currentLang,"step"),"1")}${field("pwX",tr(currentLang,"evaluateX"),"10",true)}</div>${actionButtons("runPiecewiseFunction()","examplePiecewiseFunction()","clearPiecewiseFunction()")}</div><div id="functionOutput"></div>`;
   else if(currentFunctionTab==="dataset") c.innerHTML=`<div class="card input-card"><div class="fields">${field("dataLabels",tr(currentLang,"labels"),"A, B, C, D, E")}${field("dataValues",tr(currentLang,"values"),"4.6, 8.3, 7.7, 9.4, 10")}</div><div class="field"><label>${tr(currentLang,"chartType")}</label><select id="dataType"><option value="line">${tr(currentLang,"lineChart")}</option><option value="bar">${tr(currentLang,"barChart")}</option></select></div>${actionButtons("runDatasetChart()","exampleDatasetChart()","clearDatasetChart()")}</div><div id="functionOutput"></div>`;
   else if(currentFunctionTab==="pie") c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"mode")}</label><select id="pieMode"><option value="values">${tr(currentLang,"valuesToPercentages")}</option><option value="percentages">${tr(currentLang,"percentagesToValues")}</option></select></div>${field("pieLabels",tr(currentLang,"labels"),"Goods, Food, Office, Facilities, Salaries, Chemicals")}${field("pieValues",tr(currentLang,"values"),"10, 23, 1, 5, 59, 2")}${field("pieTotal",tr(currentLang,"totalAmount"),"25480")}${actionButtons("runPieChart()","examplePieChart()","clearPieChart()")}</div><div id="functionOutput"></div>`;
   else c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"loanType")}</label><select id="chartLoanType"><option value="constant">${tr(currentLang,"constantLoan")}</option><option value="annuity">${tr(currentLang,"annuityLoan")}</option></select></div><div class="fields">${field("chartCapital",tr(currentLang,"capital"),"210000")}${field("chartMonths",tr(currentLang,"months"),"300")}${field("chartInterest",tr(currentLang,"annualInterest"),"1.26")}${field("chartInstallment",tr(currentLang,"installmentNumber"),"1")}</div><div class="field"><label for="chartMetric">${tr(currentLang,"chartMetric")}</label><select id="chartMetric"><option value="remaining">${tr(currentLang,"remainingBalance")}</option><option value="interest">${tr(currentLang,"interestComponent")}</option><option value="principal">${tr(currentLang,"principalComponent")}</option><option value="payment">${tr(currentLang,"payment")}</option></select></div>${actionButtons("runLoanChart()","exampleLoanChart()","clearLoanChart()")}</div><div id="functionOutput"></div>`;
@@ -1284,7 +1361,7 @@ function renderIndexes() {
 
       <div class="card input-card">
         <div class="fields">
-          ${field("indexedOldValue", tr(currentLang, "oldValue"))}
+          ${field("indexedOldValue", tr(currentLang, "oldValue"), "", true)}
           ${field("indexedOldIndex", tr(currentLang, "oldIndex"))}
           ${field("indexedNewIndex", tr(currentLang, "newIndex"))}
         </div>
@@ -1346,8 +1423,8 @@ function renderIndexes() {
 
     <div class="card input-card">
       <div class="fields">
-        ${field("oldValue", tr(currentLang, "oldValue"))}
-        ${field("newValue", tr(currentLang, "newValue"))}
+        ${field("oldValue", tr(currentLang, "oldValue"), "", true)}
+        ${field("newValue", tr(currentLang, "newValue"), "", true)}
       </div>
 
       ${actionButtons(
@@ -1581,9 +1658,9 @@ x = incógnita`;
 
       <div class="card input-card">
         <div class="fields">
-          ${field("linearA", "a")}
-          ${field("linearB", "b")}
-          ${field("linearC", "c")}
+          ${field("linearA", "a", "", true)}
+          ${field("linearB", "b", "", true)}
+          ${field("linearC", "c", "", true)}
         </div>
 
         ${actionButtons(
@@ -1614,9 +1691,9 @@ D = discriminante`;
 
       <div class="card input-card">
         <div class="fields">
-          ${field("quadraticA", "a")}
-          ${field("quadraticB", "b")}
-          ${field("quadraticC", "c")}
+          ${field("quadraticA", "a", "", true)}
+          ${field("quadraticB", "b", "", true)}
+          ${field("quadraticC", "c", "", true)}
         </div>
 
         ${actionButtons(
@@ -1746,7 +1823,7 @@ function changeLanguage(lang) {
 
 // Phase 1 web-only extensions. They reuse the existing cards, tabs and result areas.
 let probTab="simple";
-function renderEquations(){el("moduleTitle").textContent=tr(currentLang,"navEquations");el("content").innerHTML=`<div class="tabs"><button class="tab-button ${currentEquationTab==='linear'?"active":""}" onclick="currentEquationTab='linear';renderEquations()">${tr(currentLang,"linearEquation")}</button><button class="tab-button ${currentEquationTab==='quadratic'?"active":""}" onclick="currentEquationTab='quadratic';renderEquations()">${tr(currentLang,"quadraticEquation")}</button><button class="tab-button ${currentEquationTab==='system'?"active":""}" onclick="currentEquationTab='system';renderEquations()">${tr(currentLang,"systems")}</button></div><div id="equationTabContent"></div>`; if(currentEquationTab==='system'){el("equationTabContent").innerHTML=`${formulaCard("a₁x + b₁y = c₁\na₂x + b₂y = c₂") }<div class="card input-card"><div class="fields">${field("sysA1",tr(currentLang,"systemA1"))}${field("sysB1",tr(currentLang,"systemB1"))}${field("sysC1",tr(currentLang,"systemC1"))}${field("sysA2",tr(currentLang,"systemA2"))}${field("sysB2",tr(currentLang,"systemB2"))}${field("sysC2",tr(currentLang,"systemC2"))}</div>${actionButtons("runSystem()","exampleSystem()","clearSystem()")}</div>${resultArea("system")}`;}else renderEquationTabContent();}
+function renderEquations(){el("moduleTitle").textContent=tr(currentLang,"navEquations");el("content").innerHTML=`<div class="tabs"><button class="tab-button ${currentEquationTab==='linear'?"active":""}" onclick="currentEquationTab='linear';renderEquations()">${tr(currentLang,"linearEquation")}</button><button class="tab-button ${currentEquationTab==='quadratic'?"active":""}" onclick="currentEquationTab='quadratic';renderEquations()">${tr(currentLang,"quadraticEquation")}</button><button class="tab-button ${currentEquationTab==='system'?"active":""}" onclick="currentEquationTab='system';renderEquations()">${tr(currentLang,"systems")}</button></div><div id="equationTabContent"></div>`; if(currentEquationTab==='system'){el("equationTabContent").innerHTML=`${formulaCard("a₁x + b₁y = c₁\na₂x + b₂y = c₂") }<div class="card input-card"><div class="fields">${field("sysA1",tr(currentLang,"systemA1"),"",true)}${field("sysB1",tr(currentLang,"systemB1"),"",true)}${field("sysC1",tr(currentLang,"systemC1"),"",true)}${field("sysA2",tr(currentLang,"systemA2"),"",true)}${field("sysB2",tr(currentLang,"systemB2"),"",true)}${field("sysC2",tr(currentLang,"systemC2"),"",true)}</div>${actionButtons("runSystem()","exampleSystem()","clearSystem()")}</div>${resultArea("system")}`;}else renderEquationTabContent();}
 function runSystem(){try{setCalculationOutput("system",calculateSystem({a1:el("sysA1").value,b1:el("sysB1").value,c1:el("sysC1").value,a2:el("sysA2").value,b2:el("sysB2").value,c2:el("sysC2").value},currentLang));}catch{setError("system");}} function exampleSystem(){["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"].forEach((id,i)=>el(id).value=[2,1,5,1,-1,1][i]);runSystem();} function clearSystem(){clearFields(["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"],"system");}
 
 function renderTrigonometry(){el("moduleTitle").textContent=tr(currentLang,"navTrigonometry");el("content").innerHTML=`${formulaCard("tan(A) = opposite / adjacent\nh² = opposite² + adjacent²") }<div class="card input-card"><div class="fields">${field("opposite",tr(currentLang,"opposite"))}${field("adjacent",tr(currentLang,"adjacent"))}${field("hypotenuse",tr(currentLang,"hypotenuse"))}${field("angle",tr(currentLang,"angle"))}</div>${actionButtons("runRightTriangle()","exampleTrigonometry()","clearRightTriangle()")}</div>${resultArea("trigonometry")}`;} function runRightTriangle(){try{setCalculationOutput("trigonometry",calculateRightTriangle({opposite:el("opposite").value,adjacent:el("adjacent").value,hypotenuse:el("hypotenuse").value,angle:el("angle").value},currentLang));}catch{setError("trigonometry");}} function clearRightTriangle(){clearFields(["opposite","adjacent","hypotenuse","angle"],"trigonometry");}
@@ -1816,7 +1893,7 @@ function renderExponential() {
       <div class="fields">
         ${field("initialValue", tr(currentLang, "initialValue"))}
         ${field("factor", tr(currentLang, "factor"))}
-        ${field("time", tr(currentLang, "time"))}
+        ${field("time", tr(currentLang, "time"), "", true)}
         ${field("targetValue", tr(currentLang, "targetValue"))}
       </div>
 
