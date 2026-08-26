@@ -468,27 +468,70 @@ function runLinearFunction() {
       (x) => m * x + b
     );
 
-    const trend =
+    const value = m * evaluateX + b;
+    const product = m * evaluateX;
+
+    const behavior =
       m > 0
-        ? tr(currentLang, "increasing")
+        ? currentLang === "FI"
+          ? "Kasvava"
+          : currentLang === "EN"
+          ? "Increasing"
+          : "Creciente"
         : m < 0
-          ? tr(currentLang, "decreasing")
-          : tr(currentLang, "constantFunction");
+        ? currentLang === "FI"
+          ? "Vähenevä"
+          : currentLang === "EN"
+          ? "Decreasing"
+          : "Decreciente"
+        : currentLang === "FI"
+        ? "Vakio"
+        : currentLang === "EN"
+        ? "Constant"
+        : "Constante";
 
-    const evaluated = m * evaluateX + b;
+    const calcTitle =
+      currentLang === "FI"
+        ? `Lasketaan funktion arvo kohdassa x = ${evaluateX}`
+        : currentLang === "EN"
+        ? `Calculate the function value at x = ${evaluateX}`
+        : `Calculamos el valor de la función en x = ${evaluateX}`;
 
-    outputFunction(
-      `f(${evaluateX}) = ${evaluated.toFixed(2)}`,
+    const behaviorLabel =
+      currentLang === "FI"
+        ? "Käyttäytyminen"
+        : currentLang === "EN"
+        ? "Behavior"
+        : "Comportamiento";
+
+    const tableHeader =
+      currentLang === "FI"
+        ? "Arvotaulukko"
+        : currentLang === "EN"
+        ? "Value table"
+        : "Tabla de valores";
+
+    const text =
       `${tr(currentLang, "slope")}: ${m}\n` +
       `${tr(currentLang, "intercept")}: ${b}\n` +
-      `${tr(currentLang, "functionBehavior")}: ${trend}\n\n` +
-      `${tr(currentLang, "valueTable")}:\n` +
+      `${behaviorLabel}: ${behavior}\n\n` +
+      `${calcTitle}\n\n` +
+      `f(x) = m × x + b\n` +
+      `f(${evaluateX}) = ${m} × ${evaluateX} ${b < 0 ? "−" : "+"} ${Math.abs(b)}\n` +
+      `f(${evaluateX}) = ${product.toFixed(2)} ${b < 0 ? "−" : "+"} ${Math.abs(b).toFixed(2)}\n` +
+      `f(${evaluateX}) = ${value.toFixed(2)}\n\n` +
+      `${tableHeader}:\n\n` +
+      `x | f(x)\n` +
       points
         .map(
           (point) =>
             `${point.x.toFixed(2)} | ${point.y.toFixed(2)}`
         )
-        .join("\n"),
+        .join("\n");
+
+    outputFunction(
+      `f(${evaluateX}) = ${value.toFixed(2)}`,
+      text,
       graphSvg(points)
     );
   } catch {
@@ -498,7 +541,6 @@ function runLinearFunction() {
     );
   }
 }
-
 function exampleLinearFunction(){el("fnM").value="10.5";el("fnB").value="0";el("fnStart").value="4";el("fnEnd").value="10";el("fnStep").value="1";el("fnX").value="10";runLinearFunction();} function clearLinearFunction(){renderFunctions();}
 
 function runPiecewiseFunction() {
@@ -2249,10 +2291,48 @@ function exampleAdvancedProbability() {
 
 function renderVat() {
   el("moduleTitle").textContent = tr(currentLang, "navVat");
-  el("content").innerHTML = `${formulaCard("gross = net × (1 + rate)\nVAT = gross − net\nnet = gross / (1 + rate)")}<div class="card input-card"><div class="fields"><div class="field"><label for="vatMode">${tr(currentLang,"mode")}</label><select id="vatMode"><option value="net">${tr(currentLang,"netToGross")}</option><option value="gross">${tr(currentLang,"grossToNet")}</option></select></div>${field("vatAmount",tr(currentLang,"amount"))}${field("vatRate",tr(currentLang,"rate"))}</div>${actionButtons("runVat()","exampleVat()","clearVat()")}</div>${resultArea("vat")}`;
+
+  const formula =
+    currentLang === "FI"
+      ? "verollinen hinta = veroton hinta × (1 + ALV / 100)\nALV = verollinen hinta − veroton hinta\nveroton hinta = verollinen hinta / (1 + ALV / 100)"
+      : currentLang === "EN"
+      ? "gross price = net price × (1 + VAT / 100)\nVAT = gross price − net price\nnet price = gross price / (1 + VAT / 100)"
+      : "precio bruto = precio neto × (1 + IVA / 100)\nIVA = precio bruto − precio neto\nprecio neto = precio bruto / (1 + IVA / 100)";
+
+  el("content").innerHTML = `
+    ${formulaCard(formula)}
+
+    <div class="card input-card">
+      <div class="fields">
+        <div class="field">
+          <label for="vatMode">${tr(currentLang, "mode")}</label>
+          <select id="vatMode">
+            <option value="net">${tr(currentLang, "netToGross")}</option>
+            <option value="gross">${tr(currentLang, "grossToNet")}</option>
+          </select>
+        </div>
+
+        ${field("vatAmount", tr(currentLang, "amount"))}
+        ${field("vatRate", tr(currentLang, "rate"))}
+      </div>
+
+      ${actionButtons(
+        "runVat()",
+        "exampleVat()",
+        "clearVat()"
+      )}
+    </div>
+
+    ${resultArea("vat")}
+  `;
 }
 function runVat(){try{setCalculationOutput("vat",calculateVat({amount:el("vatAmount").value,rate:el("vatRate").value,mode:el("vatMode").value},currentLang));}catch{setError("vat");}}
-function exampleVat(){el("vatMode").value="net";el("vatAmount").value="100";el("vatRate").value="24";runVat();}
+function exampleVat() {
+  el("vatMode").value = "net";
+  el("vatAmount").value = "125";
+  el("vatRate").value = "25,5";
+  runVat();
+}
 function clearVat(){clearFields(["vatAmount","vatRate"],"vat");}
 
 function clearAdvancedProbability() {

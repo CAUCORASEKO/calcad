@@ -1201,7 +1201,12 @@ function calculateVat(data, lang) {
   const amount = numberValue(data.amount);
   const rate = numberValue(data.rate);
 
-  if (amount < 0 || rate < 0) {
+  if (
+    !Number.isFinite(amount) ||
+    !Number.isFinite(rate) ||
+    amount < 0 ||
+    rate < 0
+  ) {
     throw new Error("invalid_input");
   }
 
@@ -1221,29 +1226,84 @@ function calculateVat(data, lang) {
 
   const L =
     lang === "FI"
-      ? { net: "Netto", vat: "ALV", gross: "Brutto" }
+      ? {
+          net: "Veroton hinta",
+          vat: "ALV",
+          gross: "Verollinen hinta",
+          vatStep: "1. Lasketaan ALV",
+          grossStep: "2. Lasketaan verollinen hinta",
+          netStep: "1. Lasketaan veroton hinta",
+          vatFromGrossStep: "2. Lasketaan ALV",
+          netFormula:
+            "veroton hinta = verollinen hinta / (1 + ALV / 100)",
+          grossFormula:
+            "verollinen hinta = veroton hinta × (1 + ALV / 100)\n" +
+            "ALV = verollinen hinta − veroton hinta",
+        }
       : lang === "EN"
-      ? { net: "Net", vat: "VAT", gross: "Gross" }
-      : { net: "Neto", vat: "IVA", gross: "Bruto" };
+      ? {
+          net: "Net price",
+          vat: "VAT",
+          gross: "Gross price",
+          vatStep: "1. Calculate VAT",
+          grossStep: "2. Calculate gross price",
+          netStep: "1. Calculate net price",
+          vatFromGrossStep: "2. Calculate VAT",
+          netFormula:
+            "net price = gross price / (1 + VAT / 100)",
+          grossFormula:
+            "gross price = net price × (1 + VAT / 100)\n" +
+            "VAT = gross price − net price",
+        }
+      : {
+          net: "Precio neto",
+          vat: "IVA",
+          gross: "Precio bruto",
+          vatStep: "1. Calculamos el IVA",
+          grossStep: "2. Calculamos el precio bruto",
+          netStep: "1. Calculamos el precio neto",
+          vatFromGrossStep: "2. Calculamos el IVA",
+          netFormula:
+            "precio neto = precio bruto / (1 + IVA / 100)",
+          grossFormula:
+            "precio bruto = precio neto × (1 + IVA / 100)\n" +
+            "IVA = precio bruto − precio neto",
+        };
+
+  let steps;
+
+  if (data.mode === "gross") {
+    steps =
+      `${L.netStep}\n\n` +
+      `${L.net} = ${formatMoney(gross)} € / (1 + ${rate.toFixed(2)} / 100)\n` +
+      `${L.net} = ${formatMoney(net)} €\n\n` +
+      `${L.vatFromGrossStep}\n\n` +
+      `${L.vat} = ${formatMoney(gross)} € − ${formatMoney(net)} €\n` +
+      `${L.vat} = ${formatMoney(vat)} €`;
+  } else {
+    steps =
+      `${L.vatStep}\n\n` +
+      `${L.vat} = ${formatMoney(net)} € × ${rate.toFixed(2)} / 100\n` +
+      `${L.vat} = ${formatMoney(vat)} €\n\n` +
+      `${L.grossStep}\n\n` +
+      `${L.gross} = ${formatMoney(net)} € + ${formatMoney(vat)} €\n` +
+      `${L.gross} = ${formatMoney(gross)} €`;
+  }
 
   return {
     result:
-      `${L.net} = ${formatMoney(net)}, ` +
-      `${L.vat} = ${formatMoney(vat)}, ` +
-      `${L.gross} = ${formatMoney(gross)}`,
+      `${L.net}: ${formatMoney(net)} €\n` +
+      `${L.vat}: ${formatMoney(vat)} €\n` +
+      `${L.gross}: ${formatMoney(gross)} €`,
 
     formula:
       data.mode === "gross"
-        ? "net = gross / (1 + rate)"
-        : "gross = net × (1 + rate)\nVAT = gross − net",
+        ? L.netFormula
+        : L.grossFormula,
 
-    steps:
-      `${L.net}: ${formatMoney(net)}\n` +
-      `${L.vat}: ${formatMoney(vat)}\n` +
-      `${L.gross}: ${formatMoney(gross)}`,
+    steps,
   };
 }
-
 
 function calculateTaxedGrowth(data, lang) {
   const startCapital = numberValue(data.start);
