@@ -1,7 +1,7 @@
 let currentLang = "ES";
 let currentModule = "loans";
 let currentLoanTab = "constant";
-let currentEquationTab = "linear";
+let currentEquationTab = "direct";
 let currentSystemTab = "linear";
 let currentContributionTab = "direct";
 let currentIndexTab = "change";
@@ -1691,6 +1691,16 @@ function showEquationTab(tab) {
 }
 
 function renderEquationTabContent() {
+  if (currentEquationTab === "direct") {
+    el("equationTabContent").innerHTML = `<div class="card input-card">
+      <div class="field"><label for="directEquation1">${tr(currentLang,"equation1")}</label><input id="directEquation1" type="text" inputmode="text" autocomplete="off" placeholder="3x + 6 = 15"></div>
+      <div class="field"><label for="directEquation2">${tr(currentLang,"equation2")}</label><input id="directEquation2" type="text" inputmode="text" autocomplete="off" placeholder="-2x - y = 1"></div>
+      <div class="math-keyboard" aria-label="${tr(currentLang,"mathKeyboard")}">${["0","1","2","3","4","5","6","7","8","9","x","y","x²","+","−","=","(",")",".",",","^","/","×","√","⌫","C"].map(k=>`<button type="button" onclick="insertMathKey('${k}')">${k}</button>`).join("")}</div>
+      ${actionButtons("runDirectEquations()","exampleDirectEquations()","clearDirectEquations()")}
+    </div>${resultArea("directEquation")}`;
+    ["directEquation1","directEquation2"].forEach(id => el(id).addEventListener("focus", () => { activeMathInput=id; }));
+    return;
+  }
   if (currentEquationTab === "linear") {
     const formula =
       currentLang === "FI"
@@ -1884,6 +1894,7 @@ function renderEquations() {
 
   el("content").innerHTML = `
     <div class="tabs">
+      <button class="tab-button ${currentEquationTab === "direct" ? "active" : ""}" onclick="currentEquationTab='direct';renderEquations()">${tr(currentLang,"directEquations")}</button>
       <button
         class="tab-button ${currentEquationTab === "linear" ? "active" : ""}"
         onclick="currentEquationTab='linear';renderEquations()"
@@ -1991,6 +2002,21 @@ function renderEquations() {
     ${resultArea("system")}
   `;
 }
+
+let activeMathInput = "directEquation1";
+function insertMathKey(key) {
+  const input = el(activeMathInput); if (!input) return;
+  input.focus(); const start = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? start;
+  if (key === "⌫") input.value = input.value.slice(0, Math.max(0,start-1)) + input.value.slice(end), input.setSelectionRange(Math.max(0,start-1),Math.max(0,start-1));
+  else if (key === "C") input.value = "", input.setSelectionRange(0,0);
+  else input.value = input.value.slice(0,start) + key + input.value.slice(end), input.setSelectionRange(start+key.length,start+key.length);
+}
+function runDirectEquations() {
+  try { const p=parseDirectEquations(el("directEquation1").value,el("directEquation2").value,currentLang); const output=p.type==="linear"?calculateLinearEquation(p.data,currentLang):p.type==="quadratic"?calculateQuadraticEquation(p.data,currentLang):p.type==="system"?calculateSystem(p.data,currentLang):calculateQuadraticLinearSystem(p.data,currentLang); setCalculationOutput("directEquation",output); }
+  catch (error) { if (error.message === "parse_input") { el("directEquationResult").textContent=tr(currentLang,"parseError"); el("directEquationSteps").textContent=""; } else setError("directEquation"); }
+}
+function exampleDirectEquations() { el("directEquation1").value="x² + 2 = y"; el("directEquation2").value="-2x - y = 1"; runDirectEquations(); }
+function clearDirectEquations() { clearFields(["directEquation1","directEquation2"],"directEquation"); }
 
 
 function runSystem() {

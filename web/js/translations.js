@@ -1,6 +1,6 @@
 const TRANSLATIONS = {
   EN: {
-    appTitle: "CalcAd", language: "Language",
+    appTitle: "CalcAd", language: "Language", directEquations:"Direct equation input", equation1:"Equation 1", equation2:"Equation 2", mathKeyboard:"Math keyboard", parseError:"Could not parse the input",
     navLoans: "Loans", navContribution: "Contribution Margin", navIndexes: "Indexes",
     navInflation: "Inflation", navProbability: "Probability", navEquations: "Equations",
     navTrigonometry: "Trigonometry", navExponential: "Exponential Functions",
@@ -17,7 +17,7 @@ const TRANSLATIONS = {
     factor: "Factor a", time: "Time t", systems: "Systems of equations", advanced: "Advanced", simpleMode: "Favorable / total", dieOne: "One die", diceTwo: "Two dice", customDice: "Custom dice", diceMode: "Dice setup", probabilityKind: "Question", target: "Target", sideCount: "First die sides", secondSideCount: "Second die sides", comparison: "Comparison", equal: "Equal to", greater: "Greater than", less: "Less than", greaterEqual: "Greater than or equal to", lessEqual: "Less than or equal to", atLeast: "At least", divisible: "Divisible / integer quotient", value: "Value", sum: "Sum", product: "Product", atLeastOne: "At least one die equals", totalOutcomes: "Total outcomes", favorableOutcomes: "Favorable outcomes", favorablePairs: "Favorable pairs", unique: "Unique solution", none: "No solution", infinite: "Infinitely many solutions", targetValue: "Target value (optional)", growthPercent: "Growth rate", decreasePercent: "Decrease rate", solveValue: "Evaluate f(t)", solveTime: "Solve for t", hypotenuse: "Hypotenuse", angle: "Angle (degrees)", slope: "Slope m", quotient: "Integer quotient", systemA1: "Equation 1: x coefficient", systemB1: "Equation 1: y coefficient", systemC1: "Equation 1: right-hand side", systemA2: "Equation 2: x coefficient", systemB2: "Equation 2: y coefficient", systemC2: "Equation 2: right-hand side", linearSystem: "Linear system", quadraticLinearSystem: "Quadratic-linear system", quadraticSystemA: "Quadratic coefficient a", quadraticSystemB: "Linear coefficient b", quadraticSystemC: "Constant c", systemLineSlope: "Line slope d", systemLineIntercept: "Line intercept e",
   },
   ES: {
-    appTitle: "CalcAd",
+    appTitle: "CalcAd", directEquations:"Entrada directa", equation1:"Ecuación 1", equation2:"Ecuación 2", mathKeyboard:"Teclado matemático", parseError:"No se pudo interpretar la entrada",
     language: "Idioma",
 
     navLoans: "Préstamos",
@@ -72,7 +72,7 @@ const TRANSLATIONS = {
   },
 
   FI: {
-    appTitle: "CalcAd",
+    appTitle: "CalcAd", directEquations:"Syötä yhtälö suoraan", equation1:"1. yhtälö", equation2:"2. yhtälö", mathKeyboard:"Matematiikkanäppäimistö", parseError:"Syötettä ei voitu tulkita",
     language: "Kieli",
 
     navLoans: "Lainat",

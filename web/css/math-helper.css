@@ -108,6 +108,10 @@ h1 { margin: 0; font-size: 38px; line-height: 1.05; letter-spacing: -1.5px; } .s
   align-items: stretch;
 }
 
+.math-keyboard { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin:16px 0; }
+.math-keyboard button { min-height:42px; border:1px solid var(--border); border-radius:12px; background:var(--surface-soft); color:var(--text); font-size:18px; font-weight:700; }
+@media (max-width:500px) { .math-keyboard { gap:5px; } .math-keyboard button { min-height:38px; } }
+
 .signed-input input {
   min-width: 0;
 }

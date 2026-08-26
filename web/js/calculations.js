@@ -1930,3 +1930,59 @@ Tipo de función:
 ${trend}`,
   };
 }
+// Safe direct equation parser. It deliberately supports only degree-2 polynomials in x
+// and degree-1 terms in y; it never evaluates user input as JavaScript.
+function parseEquationPolynomial(input) {
+  let s = String(input || "").replace(/[−–—]/g, "-").replace(/[×*]/g, "*").replace(/,/g, ".").replace(/²/g, "^2").replace(/\s+/g, "");
+  if (!s || (s.match(/=/g) || []).length !== 1) throw new Error("parse_input");
+  const parts = s.split("=");
+  const parseSide = (side, sign) => {
+    if (!side || /[^0-9.x y+\-^*/()]/i.test(side) || /\//.test(side)) throw new Error("parse_input");
+    side = side.replace(/\(([-+]?\d+(?:\.\d+)?)\)/g, "$1");
+    if (/[()]/.test(side)) throw new Error("parse_input");
+    side = side.replace(/\*/g, "");
+    const terms = side.replace(/-/g, "+-").split("+").filter(Boolean);
+    const out = { x2: 0, x: 0, y: 0, c: 0 };
+    terms.forEach(term => {
+      const x2 = term.match(/^([+-]?(?:\d*\.?\d+)?)x\^2$/i);
+      const x = term.match(/^([+-]?(?:\d*\.?\d+)?)x$/i);
+      const y = term.match(/^([+-]?(?:\d*\.?\d+)?)y$/i);
+      const n = term.match(/^[+-]?(?:\d*\.?\d+)$/);
+      const coefficient = m => (m === "" || m === "+" ? 1 : m === "-" ? -1 : Number(m));
+      if (x2) out.x2 += sign * coefficient(x2[1]);
+      else if (x) out.x += sign * coefficient(x[1]);
+      else if (y) out.y += sign * coefficient(y[1]);
+      else if (n) out.c += sign * Number(term);
+      else throw new Error("parse_input");
+    });
+    return out;
+  };
+  const left = parseSide(parts[0], 1), right = parseSide(parts[1], -1);
+  return { x2:left.x2+right.x2, x:left.x+right.x, y:left.y+right.y, c:left.c+right.c };
+}
+
+function parseDirectEquations(first, second, lang) {
+  const equations = [first, second].filter(v => String(v || "").trim()).map(parseEquationPolynomial);
+  if (!equations.length || (equations.length > 2)) throw new Error("parse_input");
+  if (equations.length === 1) {
+    const q = equations[0];
+    if (q.y !== 0 || q.x2 !== 0 && q.x === 0 && q.y !== 0) throw new Error("parse_input");
+    if (q.x2 !== 0) return { type:"quadratic", data:{a:q.x2,b:q.x,c:q.c} };
+    if (q.y !== 0) throw new Error("parse_input");
+    return { type:"linear", data:{a:q.x,b:0,c:-q.c} };
+  }
+  const [a,b] = equations;
+  if (!a.x2 && !b.x2) return { type:"system", data:{a1:a.x,b1:a.y,c1:-a.c,a2:b.x,b2:b.y,c2:-b.c} };
+  const q = a.x2 ? a : b, line = a.x2 ? b : a;
+  if (q.y === 0 || line.x2 !== 0 || line.y === 0) throw new Error("parse_input");
+  return {
+    type: "quadraticSystem",
+    data: {
+      a: -q.x2 / q.y,
+      b: -q.x / q.y,
+      c: -q.c / q.y,
+      d: -line.x / line.y,
+      e: -line.c / line.y,
+    },
+  };
+}
