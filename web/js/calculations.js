@@ -568,6 +568,252 @@ function calculateSystem(data, lang) {
   return {result:`${label}: x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`,formula:"Cramer's rule: x = Dx/D, y = Dy/D",steps};
 }
 
+
+function formatPolynomialCoefficient(value, variable, first = false) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n) || n === 0) {
+    return "";
+  }
+
+  const abs = Math.abs(n);
+  const magnitude =
+    abs === 1
+      ? ""
+      : Number.isInteger(abs)
+      ? String(abs)
+      : String(abs);
+
+  if (first) {
+    return n < 0
+      ? `−${magnitude}${variable}`
+      : `${magnitude}${variable}`;
+  }
+
+  return n < 0
+    ? ` − ${magnitude}${variable}`
+    : ` + ${magnitude}${variable}`;
+}
+
+
+function formatPolynomialConstant(value, hasPrevious = true) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n) || n === 0) {
+    return "";
+  }
+
+  const abs = Math.abs(n);
+  const magnitude =
+    Number.isInteger(abs)
+      ? String(abs)
+      : String(abs);
+
+  if (!hasPrevious) {
+    return n < 0
+      ? `−${magnitude}`
+      : magnitude;
+  }
+
+  return n < 0
+    ? ` − ${magnitude}`
+    : ` + ${magnitude}`;
+}
+
+
+function formatQuadraticFunction(a, b, c) {
+  const aTerm = formatPolynomialCoefficient(a, "x²", true);
+  const bTerm = formatPolynomialCoefficient(
+    b,
+    "x",
+    aTerm === ""
+  );
+
+  const hasPrevious =
+    aTerm !== "" || bTerm !== "";
+
+  const cTerm =
+    formatPolynomialConstant(
+      c,
+      hasPrevious
+    );
+
+  const expression =
+    `${aTerm}${bTerm}${cTerm}` || "0";
+
+  return `y = ${expression}`;
+}
+
+
+function formatLinearFunction(d, e) {
+  const dTerm =
+    formatPolynomialCoefficient(
+      d,
+      "x",
+      true
+    );
+
+  const eTerm =
+    formatPolynomialConstant(
+      e,
+      dTerm !== ""
+    );
+
+  const expression =
+    `${dTerm}${eTerm}` || "0";
+
+  return `y = ${expression}`;
+}
+
+
+function calculateQuadraticLinearSystem(data, lang) {
+  const a = numberValue(data.a);
+  const b = numberValue(data.b);
+  const c = numberValue(data.c);
+  const d = numberValue(data.d);
+  const e = numberValue(data.e);
+
+  if (![a, b, c, d, e].every(Number.isFinite) || a === 0) {
+    throw new Error("invalid_input");
+  }
+
+  // y = ax² + bx + c
+  // y = dx + e
+  //
+  // ax² + bx + c = dx + e
+  // ax² + (b-d)x + (c-e) = 0
+
+  const qb = b - d;
+  const qc = c - e;
+  const D = qb ** 2 - 4 * a * qc;
+
+  const L =
+    lang === "FI"
+      ? {
+          title: "Toisen asteen yhtälöpari",
+          substitute: "1. Asetetaan yhtälöiden oikeat puolet yhtä suuriksi",
+          simplify: "2. Siirretään kaikki termit samalle puolelle",
+          discriminant: "3. Lasketaan diskriminantti",
+          solutions: "4. Ratkaistaan x ja y",
+          none: "Ei reaalisia ratkaisuja",
+          one: "Yksi reaalinen ratkaisu",
+          two: "Kaksi reaalista ratkaisua",
+        }
+      : lang === "EN"
+      ? {
+          title: "Quadratic-linear system",
+          substitute: "1. Set the right-hand sides equal",
+          simplify: "2. Move all terms to one side",
+          discriminant: "3. Calculate the discriminant",
+          solutions: "4. Solve for x and y",
+          none: "No real solutions",
+          one: "One real solution",
+          two: "Two real solutions",
+        }
+      : {
+          title: "Sistema cuadrático-lineal",
+          substitute: "1. Igualamos los lados derechos",
+          simplify: "2. Pasamos todos los términos a un lado",
+          discriminant: "3. Calculamos el discriminante",
+          solutions: "4. Calculamos x e y",
+          none: "No hay soluciones reales",
+          one: "Una solución real",
+          two: "Dos soluciones reales",
+        };
+
+  const reducedQuadraticDisplay =
+    formatQuadraticFunction(a, qb, qc)
+      .replace("y = ", "");
+
+  const quadraticText =
+    `${reducedQuadraticDisplay} = 0`;
+
+  const quadraticDisplay =
+    formatQuadraticFunction(a, b, c);
+
+  const linearDisplay =
+    formatLinearFunction(d, e);
+
+  let steps =
+    `${quadraticDisplay}\n` +
+    `${linearDisplay}\n\n` +
+
+    `${L.substitute}\n\n` +
+    `${quadraticDisplay.replace("y = ", "")} = ` +
+    `${linearDisplay.replace("y = ", "")}\n\n` +
+
+    `${L.simplify}\n\n` +
+    `${quadraticText}\n\n` +
+
+    `${L.discriminant}\n\n` +
+    `D = b² − 4ac\n` +
+    `D = ${qb.toFixed(2)}² − 4 × ${a.toFixed(2)} × ${qc.toFixed(2)}\n` +
+    `D = ${D.toFixed(2)}`;
+
+  if (D < 0) {
+    steps +=
+      `\n\nD < 0\n\n${L.none}.`;
+
+    return {
+      result: L.none,
+      formula:
+        "y = ax² + bx + c\n" +
+        "y = dx + e\n" +
+        "ax² + (b − d)x + (c − e) = 0",
+      steps,
+    };
+  }
+
+  if (D === 0) {
+    const x = -qb / (2 * a);
+    const y = d * x + e;
+
+    steps +=
+      `\n\n${L.solutions}\n\n` +
+      `x = ${x.toFixed(4)}\n` +
+      `${formatLinearFunction(d, e)}\n` +
+      `y = ${y.toFixed(4)}`;
+
+    return {
+      result: `${L.one}: x = ${x.toFixed(4)}, y = ${y.toFixed(4)}`,
+      formula:
+        "y = ax² + bx + c\n" +
+        "y = dx + e\n" +
+        "ax² + (b − d)x + (c − e) = 0",
+      steps,
+    };
+  }
+
+  const sqrtD = Math.sqrt(D);
+  const x1 = (-qb + sqrtD) / (2 * a);
+  const x2 = (-qb - sqrtD) / (2 * a);
+
+  const y1 = d * x1 + e;
+  const y2 = d * x2 + e;
+
+  steps +=
+    `\n\n√D = ${sqrtD.toFixed(4)}\n\n` +
+    `${L.solutions}\n\n` +
+    `x₁ = ${x1.toFixed(4)}\n` +
+    `y₁ = ${y1.toFixed(4)}\n\n` +
+    `x₂ = ${x2.toFixed(4)}\n` +
+    `y₂ = ${y2.toFixed(4)}`;
+
+  return {
+    result:
+      `${L.two}\n` +
+      `(x₁, y₁) = (${x1.toFixed(4)}, ${y1.toFixed(4)})\n` +
+      `(x₂, y₂) = (${x2.toFixed(4)}, ${y2.toFixed(4)})`,
+
+    formula:
+      "y = ax² + bx + c\n" +
+      "y = dx + e\n" +
+      "ax² + (b − d)x + (c − e) = 0",
+
+    steps,
+  };
+}
+
 function calculateAdvancedProbability(data, lang) {
   const mode = data.mode;
   const sides = Number(data.sides);

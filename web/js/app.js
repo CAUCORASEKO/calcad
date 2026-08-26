@@ -2,6 +2,7 @@ let currentLang = "ES";
 let currentModule = "loans";
 let currentLoanTab = "constant";
 let currentEquationTab = "linear";
+let currentSystemTab = "linear";
 let currentContributionTab = "direct";
 let currentIndexTab = "change";
 let currentExponentialTab = "standard";
@@ -1878,8 +1879,203 @@ function changeLanguage(lang) {
 
 // Phase 1 web-only extensions. They reuse the existing cards, tabs and result areas.
 let probTab="simple";
-function renderEquations(){el("moduleTitle").textContent=tr(currentLang,"navEquations");el("content").innerHTML=`<div class="tabs"><button class="tab-button ${currentEquationTab==='linear'?"active":""}" onclick="currentEquationTab='linear';renderEquations()">${tr(currentLang,"linearEquation")}</button><button class="tab-button ${currentEquationTab==='quadratic'?"active":""}" onclick="currentEquationTab='quadratic';renderEquations()">${tr(currentLang,"quadraticEquation")}</button><button class="tab-button ${currentEquationTab==='system'?"active":""}" onclick="currentEquationTab='system';renderEquations()">${tr(currentLang,"systems")}</button></div><div id="equationTabContent"></div>`; if(currentEquationTab==='system'){el("equationTabContent").innerHTML=`${formulaCard("a₁x + b₁y = c₁\na₂x + b₂y = c₂") }<div class="card input-card"><div class="fields">${field("sysA1",tr(currentLang,"systemA1"),"",true)}${field("sysB1",tr(currentLang,"systemB1"),"",true)}${field("sysC1",tr(currentLang,"systemC1"),"",true)}${field("sysA2",tr(currentLang,"systemA2"),"",true)}${field("sysB2",tr(currentLang,"systemB2"),"",true)}${field("sysC2",tr(currentLang,"systemC2"),"",true)}</div>${actionButtons("runSystem()","exampleSystem()","clearSystem()")}</div>${resultArea("system")}`;}else renderEquationTabContent();}
-function runSystem(){try{setCalculationOutput("system",calculateSystem({a1:el("sysA1").value,b1:el("sysB1").value,c1:el("sysC1").value,a2:el("sysA2").value,b2:el("sysB2").value,c2:el("sysC2").value},currentLang));}catch{setError("system");}} function exampleSystem(){["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"].forEach((id,i)=>el(id).value=[2,1,5,1,-1,1][i]);runSystem();} function clearSystem(){clearFields(["sysA1","sysB1","sysC1","sysA2","sysB2","sysC2"],"system");}
+function renderEquations() {
+  el("moduleTitle").textContent = tr(currentLang, "navEquations");
+
+  el("content").innerHTML = `
+    <div class="tabs">
+      <button
+        class="tab-button ${currentEquationTab === "linear" ? "active" : ""}"
+        onclick="currentEquationTab='linear';renderEquations()"
+      >
+        ${tr(currentLang, "linearEquation")}
+      </button>
+
+      <button
+        class="tab-button ${currentEquationTab === "quadratic" ? "active" : ""}"
+        onclick="currentEquationTab='quadratic';renderEquations()"
+      >
+        ${tr(currentLang, "quadraticEquation")}
+      </button>
+
+      <button
+        class="tab-button ${currentEquationTab === "system" ? "active" : ""}"
+        onclick="currentEquationTab='system';renderEquations()"
+      >
+        ${tr(currentLang, "systems")}
+      </button>
+    </div>
+
+    <div id="equationTabContent"></div>
+  `;
+
+  if (currentEquationTab !== "system") {
+    renderEquationTabContent();
+    return;
+  }
+
+  const container = el("equationTabContent");
+
+  const systemTabs = `
+    <div class="tabs">
+      <button
+        class="tab-button ${currentSystemTab === "linear" ? "active" : ""}"
+        onclick="currentSystemTab='linear';renderEquations()"
+      >
+        ${tr(currentLang, "linearSystem")}
+      </button>
+
+      <button
+        class="tab-button ${currentSystemTab === "quadratic" ? "active" : ""}"
+        onclick="currentSystemTab='quadratic';renderEquations()"
+      >
+        ${tr(currentLang, "quadraticLinearSystem")}
+      </button>
+    </div>
+  `;
+
+  if (currentSystemTab === "quadratic") {
+    container.innerHTML = `
+      ${systemTabs}
+
+      ${formulaCard(
+        "y = ax² + bx + c\ny = dx + e"
+      )}
+
+      <div class="card input-card">
+        <div class="fields">
+          ${field("quadSysA", tr(currentLang, "quadraticSystemA"), "", true)}
+          ${field("quadSysB", tr(currentLang, "quadraticSystemB"), "", true)}
+          ${field("quadSysC", tr(currentLang, "quadraticSystemC"), "", true)}
+          ${field("quadSysD", tr(currentLang, "systemLineSlope"), "", true)}
+          ${field("quadSysE", tr(currentLang, "systemLineIntercept"), "", true)}
+        </div>
+
+        ${actionButtons(
+          "runQuadraticSystem()",
+          "exampleQuadraticSystem()",
+          "clearQuadraticSystem()"
+        )}
+      </div>
+
+      ${resultArea("system")}
+    `;
+
+    return;
+  }
+
+  container.innerHTML = `
+    ${systemTabs}
+
+    ${formulaCard(
+      "a₁x + b₁y = c₁\na₂x + b₂y = c₂"
+    )}
+
+    <div class="card input-card">
+      <div class="fields">
+        ${field("sysA1", tr(currentLang, "systemA1"), "", true)}
+        ${field("sysB1", tr(currentLang, "systemB1"), "", true)}
+        ${field("sysC1", tr(currentLang, "systemC1"), "", true)}
+        ${field("sysA2", tr(currentLang, "systemA2"), "", true)}
+        ${field("sysB2", tr(currentLang, "systemB2"), "", true)}
+        ${field("sysC2", tr(currentLang, "systemC2"), "", true)}
+      </div>
+
+      ${actionButtons(
+        "runSystem()",
+        "exampleSystem()",
+        "clearSystem()"
+      )}
+    </div>
+
+    ${resultArea("system")}
+  `;
+}
+
+
+function runSystem() {
+  try {
+    setCalculationOutput(
+      "system",
+      calculateSystem(
+        {
+          a1: el("sysA1").value,
+          b1: el("sysB1").value,
+          c1: el("sysC1").value,
+          a2: el("sysA2").value,
+          b2: el("sysB2").value,
+          c2: el("sysC2").value,
+        },
+        currentLang
+      )
+    );
+  } catch {
+    setError("system");
+  }
+}
+
+
+function exampleSystem() {
+  ["sysA1", "sysB1", "sysC1", "sysA2", "sysB2", "sysC2"]
+    .forEach(
+      (id, index) =>
+        el(id).value = [2, 1, 5, 1, -1, 1][index]
+    );
+
+  runSystem();
+}
+
+
+function clearSystem() {
+  clearFields(
+    ["sysA1", "sysB1", "sysC1", "sysA2", "sysB2", "sysC2"],
+    "system"
+  );
+}
+
+
+function runQuadraticSystem() {
+  try {
+    setCalculationOutput(
+      "system",
+      calculateQuadraticLinearSystem(
+        {
+          a: el("quadSysA").value,
+          b: el("quadSysB").value,
+          c: el("quadSysC").value,
+          d: el("quadSysD").value,
+          e: el("quadSysE").value,
+        },
+        currentLang
+      )
+    );
+  } catch {
+    setError("system");
+  }
+}
+
+
+function exampleQuadraticSystem() {
+  // Itslearning Tehtävä 12:
+  // y = x² + 2
+  // y = -2x - 1
+
+  el("quadSysA").value = "1";
+  el("quadSysB").value = "0";
+  el("quadSysC").value = "2";
+  el("quadSysD").value = "-2";
+  el("quadSysE").value = "-1";
+
+  runQuadraticSystem();
+}
+
+
+function clearQuadraticSystem() {
+  clearFields(
+    ["quadSysA", "quadSysB", "quadSysC", "quadSysD", "quadSysE"],
+    "system"
+  );
+}
 
 function renderTrigonometry() {
   el("moduleTitle").textContent = tr(currentLang, "navTrigonometry");
