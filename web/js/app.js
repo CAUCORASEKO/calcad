@@ -422,7 +422,7 @@ function renderFunctions() {
   el("content").innerHTML = `<div class="tabs">${tabs.map(([k,l])=>`<button class="tab-button ${currentFunctionTab===k?"active":""}" onclick="currentFunctionTab='${k}';renderFunctions()">${tr(currentLang,l)}</button>`).join("")}</div><div id="functionTabContent"></div>`;
   const c=el("functionTabContent");
   if(currentFunctionTab==="linear") c.innerHTML=`${formulaCard("f(x) = m × x + b")}<div class="card input-card"><div class="fields">${field("fnM",tr(currentLang,"slope"),"10.5",true)}${field("fnB",tr(currentLang,"intercept"),"0",true)}${field("fnStart",tr(currentLang,"xStart"),"4",true)}${field("fnEnd",tr(currentLang,"xEnd"),"10",true)}${field("fnStep",tr(currentLang,"step"),"1")}${field("fnX",tr(currentLang,"evaluateX"),"10",true)}</div>${actionButtons("runLinearFunction()","exampleLinearFunction()","clearLinearFunction()")}</div><div id="functionOutput"></div>`;
-  else if(currentFunctionTab==="piecewise") c.innerHTML=`${formulaCard("x ≤ breakpoint: rate × x\nx > breakpoint: rate × breakpoint + rate × multiplier × (x − breakpoint)")}<div class="card input-card"><div class="fields">${field("pwRate",tr(currentLang,"baseRate"),"10.5")}${field("pwBreak",tr(currentLang,"breakpoint"),"8",true)}${field("pwMult",tr(currentLang,"multiplier"),"1.5")}${field("pwStart",tr(currentLang,"xStart"),"6",true)}${field("pwEnd",tr(currentLang,"xEnd"),"10",true)}${field("pwStep",tr(currentLang,"step"),"1")}${field("pwX",tr(currentLang,"evaluateX"),"10",true)}</div>${actionButtons("runPiecewiseFunction()","examplePiecewiseFunction()","clearPiecewiseFunction()")}</div><div id="functionOutput"></div>`;
+  else if(currentFunctionTab==="piecewise") c.innerHTML=`${formulaCard("x ≤ breakpoint: rate × x\nx > breakpoint: rate × breakpoint + rate × multiplier × (x − breakpoint)")}<div class="card input-card"><div class="fields">${field("pwRate",tr(currentLang,"baseRate"))}${field("pwBreak",tr(currentLang,"breakpoint"),"",true)}${field("pwMult",tr(currentLang,"multiplier"))}${field("pwStart",tr(currentLang,"xStart"),"",true)}${field("pwEnd",tr(currentLang,"xEnd"),"",true)}${field("pwStep",tr(currentLang,"step"))}${field("pwX",tr(currentLang,"evaluateX"),"",true)}</div>${actionButtons("runPiecewiseFunction()","examplePiecewiseFunction()","clearPiecewiseFunction()")}</div><div id="functionOutput"></div>`;
   else if(currentFunctionTab==="dataset") c.innerHTML=`<div class="card input-card"><div class="fields">${field("dataLabels",tr(currentLang,"labels"),"A, B, C, D, E")}${field("dataValues",tr(currentLang,"values"),"4.6, 8.3, 7.7, 9.4, 10")}</div><div class="field"><label>${tr(currentLang,"chartType")}</label><select id="dataType"><option value="line">${tr(currentLang,"lineChart")}</option><option value="bar">${tr(currentLang,"barChart")}</option></select></div>${actionButtons("runDatasetChart()","exampleDatasetChart()","clearDatasetChart()")}</div><div id="functionOutput"></div>`;
   else if(currentFunctionTab==="pie") c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"mode")}</label><select id="pieMode"><option value="values">${tr(currentLang,"valuesToPercentages")}</option><option value="percentages">${tr(currentLang,"percentagesToValues")}</option></select></div>${field("pieLabels",tr(currentLang,"labels"),"Goods, Food, Office, Facilities, Salaries, Chemicals")}${field("pieValues",tr(currentLang,"values"),"10, 23, 1, 5, 59, 2")}${field("pieTotal",tr(currentLang,"totalAmount"),"25480")}${actionButtons("runPieChart()","examplePieChart()","clearPieChart()")}</div><div id="functionOutput"></div>`;
   else c.innerHTML=`<div class="card input-card"><div class="field"><label>${tr(currentLang,"loanType")}</label><select id="chartLoanType"><option value="constant">${tr(currentLang,"constantLoan")}</option><option value="annuity">${tr(currentLang,"annuityLoan")}</option></select></div><div class="fields">${field("chartCapital",tr(currentLang,"capital"),"210000")}${field("chartMonths",tr(currentLang,"months"),"300")}${field("chartInterest",tr(currentLang,"annualInterest"),"1.26")}${field("chartInstallment",tr(currentLang,"installmentNumber"),"1")}</div><div class="field"><label for="chartMetric">${tr(currentLang,"chartMetric")}</label><select id="chartMetric"><option value="remaining">${tr(currentLang,"remainingBalance")}</option><option value="interest">${tr(currentLang,"interestComponent")}</option><option value="principal">${tr(currentLang,"principalComponent")}</option><option value="payment">${tr(currentLang,"payment")}</option></select></div>${actionButtons("runLoanChart()","exampleLoanChart()","clearLoanChart()")}</div><div id="functionOutput"></div>`;
@@ -452,10 +452,16 @@ function runLinearFunction() {
     const start = numberValue(el("fnStart").value);
     const end = numberValue(el("fnEnd").value);
     const step = numberValue(el("fnStep").value);
-    const evaluateX = numberValue(el("fnX").value);
+
+    const evaluateText = String(el("fnX").value || "").trim();
+    const hasEvaluateX = evaluateText !== "";
+    const evaluateX = hasEvaluateX
+      ? numberValue(evaluateText)
+      : null;
 
     if (
-      ![m, b, start, end, step, evaluateX].every(Number.isFinite) ||
+      ![m, b, start, end, step].every(Number.isFinite) ||
+      (hasEvaluateX && !Number.isFinite(evaluateX)) ||
       step <= 0 ||
       end < start
     ) {
@@ -468,9 +474,6 @@ function runLinearFunction() {
       step,
       (x) => m * x + b
     );
-
-    const value = m * evaluateX + b;
-    const product = m * evaluateX;
 
     const behavior =
       m > 0
@@ -491,13 +494,6 @@ function runLinearFunction() {
         ? "Constant"
         : "Constante";
 
-    const calcTitle =
-      currentLang === "FI"
-        ? `Lasketaan funktion arvo kohdassa x = ${evaluateX}`
-        : currentLang === "EN"
-        ? `Calculate the function value at x = ${evaluateX}`
-        : `Calculamos el valor de la función en x = ${evaluateX}`;
-
     const behaviorLabel =
       currentLang === "FI"
         ? "Käyttäytyminen"
@@ -512,16 +508,43 @@ function runLinearFunction() {
         ? "Value table"
         : "Tabla de valores";
 
+    let result = "";
+    let calculationSteps = "";
+
+    if (hasEvaluateX) {
+      const value = m * evaluateX + b;
+      const product = m * evaluateX;
+
+      const calcTitle =
+        currentLang === "FI"
+          ? `Lasketaan funktion arvo kohdassa x = ${evaluateX}`
+          : currentLang === "EN"
+          ? `Calculate the function value at x = ${evaluateX}`
+          : `Calculamos el valor de la función en x = ${evaluateX}`;
+
+      result = `f(${evaluateX}) = ${value.toFixed(2)}`;
+
+      calculationSteps =
+        `\n\n${calcTitle}\n\n` +
+        `f(x) = m × x + b\n` +
+        `f(${evaluateX}) = ${m} × ${evaluateX} ${b < 0 ? "−" : "+"} ${Math.abs(b)}\n` +
+        `f(${evaluateX}) = ${product.toFixed(2)} ${b < 0 ? "−" : "+"} ${Math.abs(b).toFixed(2)}\n` +
+        `f(${evaluateX}) = ${value.toFixed(2)}`;
+    } else {
+      result =
+        currentLang === "FI"
+          ? `f(x) = ${m}x ${b < 0 ? "−" : "+"} ${Math.abs(b)}`
+          : currentLang === "EN"
+          ? `f(x) = ${m}x ${b < 0 ? "−" : "+"} ${Math.abs(b)}`
+          : `f(x) = ${m}x ${b < 0 ? "−" : "+"} ${Math.abs(b)}`;
+    }
+
     const text =
       `${tr(currentLang, "slope")}: ${m}\n` +
       `${tr(currentLang, "intercept")}: ${b}\n` +
-      `${behaviorLabel}: ${behavior}\n\n` +
-      `${calcTitle}\n\n` +
-      `f(x) = m × x + b\n` +
-      `f(${evaluateX}) = ${m} × ${evaluateX} ${b < 0 ? "−" : "+"} ${Math.abs(b)}\n` +
-      `f(${evaluateX}) = ${product.toFixed(2)} ${b < 0 ? "−" : "+"} ${Math.abs(b).toFixed(2)}\n` +
-      `f(${evaluateX}) = ${value.toFixed(2)}\n\n` +
-      `${tableHeader}:\n\n` +
+      `${behaviorLabel}: ${behavior}` +
+      calculationSteps +
+      `\n\n${tableHeader}:\n\n` +
       `x | f(x)\n` +
       points
         .map(
@@ -531,7 +554,7 @@ function runLinearFunction() {
         .join("\n");
 
     outputFunction(
-      `f(${evaluateX}) = ${value.toFixed(2)}`,
+      result,
       text,
       graphSvg(points)
     );
@@ -542,7 +565,15 @@ function runLinearFunction() {
     );
   }
 }
-function exampleLinearFunction(){el("fnM").value="10.5";el("fnB").value="0";el("fnStart").value="4";el("fnEnd").value="10";el("fnStep").value="1";el("fnX").value="10";runLinearFunction();} function clearLinearFunction(){renderFunctions();}
+function exampleLinearFunction(){el("fnM").value="10.5";el("fnB").value="0";el("fnStart").value="4";el("fnEnd").value="10";el("fnStep").value="1";el("fnX").value="10";runLinearFunction();} function clearLinearFunction() {
+  ["fnM", "fnB", "fnStart", "fnEnd", "fnStep", "fnX"].forEach((id) => {
+    const input = el(id);
+    if (input) input.value = "";
+  });
+
+  const output = el("functionOutput");
+  if (output) output.innerHTML = "";
+}
 
 function runPiecewiseFunction() {
   try {
@@ -609,7 +640,23 @@ function runPiecewiseFunction() {
   }
 }
 
-function examplePiecewiseFunction(){el("pwRate").value="10.5";el("pwBreak").value="8";el("pwMult").value="1.5";el("pwStart").value="6";el("pwEnd").value="10";el("pwStep").value="1";el("pwX").value="10";runPiecewiseFunction();} function clearPiecewiseFunction(){renderFunctions();}
+function examplePiecewiseFunction(){el("pwRate").value="10.5";el("pwBreak").value="8";el("pwMult").value="1.5";el("pwStart").value="6";el("pwEnd").value="10";el("pwStep").value="1";el("pwX").value="10";runPiecewiseFunction();} function clearPiecewiseFunction() {
+  [
+    "pwRate",
+    "pwBreak",
+    "pwMult",
+    "pwStart",
+    "pwEnd",
+    "pwStep",
+    "pwX",
+  ].forEach((id) => {
+    const input = el(id);
+    if (input) input.value = "";
+  });
+
+  const output = el("functionOutput");
+  if (output) output.innerHTML = "";
+}
 
 function runDatasetChart() {
   const values = parseList(
@@ -677,7 +724,18 @@ function runDatasetChart() {
   );
 }
 
-function exampleDatasetChart(){runDatasetChart();} function clearDatasetChart(){renderFunctions();}
+function exampleDatasetChart(){runDatasetChart();} function clearDatasetChart() {
+  ["dataLabels", "dataValues"].forEach((id) => {
+    const input = el(id);
+    if (input) input.value = "";
+  });
+
+  const type = el("dataType");
+  if (type) type.selectedIndex = 0;
+
+  const output = el("functionOutput");
+  if (output) output.innerHTML = "";
+}
 
 function runPieChart() {
   const labels = el("pieLabels")
@@ -831,7 +889,18 @@ function runPieChart() {
   );
 }
 
-function examplePieChart(){runPieChart();} function clearPieChart(){renderFunctions();}
+function examplePieChart(){runPieChart();} function clearPieChart() {
+  ["pieLabels", "pieValues", "pieTotal"].forEach((id) => {
+    const input = el(id);
+    if (input) input.value = "";
+  });
+
+  const mode = el("pieMode");
+  if (mode) mode.selectedIndex = 0;
+
+  const output = el("functionOutput");
+  if (output) output.innerHTML = "";
+}
 
 function runLoanChart() {
   try {
@@ -908,7 +977,26 @@ function runLoanChart() {
   }
 }
 
-function exampleLoanChart(){runLoanChart();} function clearLoanChart(){renderFunctions();}
+function exampleLoanChart(){runLoanChart();} function clearLoanChart() {
+  [
+    "chartCapital",
+    "chartMonths",
+    "chartInterest",
+    "chartInstallment",
+  ].forEach((id) => {
+    const input = el(id);
+    if (input) input.value = "";
+  });
+
+  const loanType = el("chartLoanType");
+  if (loanType) loanType.selectedIndex = 0;
+
+  const metric = el("chartMetric");
+  if (metric) metric.selectedIndex = 0;
+
+  const output = el("functionOutput");
+  if (output) output.innerHTML = "";
+}
 
 function renderLoans() {
   el("moduleTitle").textContent = tr(currentLang, "navLoans");
